@@ -61,6 +61,7 @@ dependencies {
 
     // Hilt (DI)
     implementation(libs.hilt.android)
+    implementation(libs.androidx.room.common.jvm)
     kapt(libs.hilt.android.compiler)
     implementation(libs.hilt.navigation.compose)
 
