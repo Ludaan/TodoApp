@@ -11,10 +11,10 @@ data class TaskEntity(
     val title: String,
     @ColumnInfo(name = "is_completed") val isCompleted: Boolean = false,
     @ColumnInfo(name = "created_at") val createdAt: Long = System.currentTimeMillis(),
-    val color: String,
+    val color: Int,
     @ColumnInfo(name = "limit_date") val limitDate: Long,
     @ColumnInfo(name = "limit_hour") val limitHour: Long,
-    val type: String,
+    val type: Int,
     @ColumnInfo(name = "repeat_at") val repeatAt: Int,
-
-    )
+    @ColumnInfo(name = "sync_status") val syncStatus: String = "SYNCED"
+)

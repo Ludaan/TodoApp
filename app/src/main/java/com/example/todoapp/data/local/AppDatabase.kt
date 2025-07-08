@@ -10,7 +10,6 @@ import com.example.todoapp.data.local.entities.TaskEntity
     version = 1,
     exportSchema = true
 )
-
-abstract class AppDatabase : RoomDatabase(){
-    abstract fun taskDao() : TaskDao
+abstract class AppDatabase : RoomDatabase() {
+    abstract fun taskDao(): TaskDao
 }
