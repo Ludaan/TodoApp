@@ -6,7 +6,12 @@ import com.example.todoapp.core.common.DispatchersProvider
 import com.example.todoapp.core.common.StandardDispatchers
 import com.example.todoapp.data.local.AppDatabase
 import com.example.todoapp.data.local.dao.TaskDao
+import com.example.todoapp.data.remote.api.FirebaseTaskApi
+import com.example.todoapp.data.remote.api.FirebaseTaskApiImpl
+import com.example.todoapp.data.sync.ConflictResolver
+import com.example.todoapp.data.sync.SyncManager
 import com.example.todoapp.domain.repository.TaskRepository
+import com.example.todoapp.domain.repository.TaskRepositoryImpl
 import com.google.firebase.Firebase
 import com.google.firebase.firestore.FirebaseFirestore
 import com.google.firebase.firestore.firestore
@@ -22,49 +27,46 @@ import javax.inject.Singleton
 @InstallIn(SingletonComponent::class)
 abstract class AppModule {
 
-    // 1. Dispatchers (Binds)
     @Binds
     @Singleton
     abstract fun bindDispatchers(dispatchers: StandardDispatchers): DispatchersProvider
 
-    // 2. Repository (Binds)
-    //@Binds
-    //@Singleton
-   // abstract fun bindTaskRepository(repository: TaskRepositoryImpl): TaskRepository
+    @Binds
+    @Singleton
+    abstract fun bindTaskRepository(repository: TaskRepositoryImpl): TaskRepository
 
-    // 3. Módulo de compañía para provides
     @InstallIn(SingletonComponent::class)
     companion object {
-        // Database
+
         @Provides
         @Singleton
-        fun provideAppDatabase(@ApplicationContext context: Context): AppDatabase {
-            return Room.databaseBuilder(
-                context,
-                AppDatabase::class.java,
-                "tasks_db"
-            ).fallbackToDestructiveMigration().build()
-        }
+        fun provideAppDatabase(@ApplicationContext context: Context): AppDatabase =
+            Room.databaseBuilder(context, AppDatabase::class.java, "tasks_db")
+                .fallbackToDestructiveMigration(false)
+                .build()
 
         @Provides
         fun provideTaskDao(db: AppDatabase): TaskDao = db.taskDao()
 
-        // Firebase
         @Provides
         @Singleton
-        fun provideFirestore(): FirebaseFirestore = Firebase.firestore
+        fun provideFireStore(): FirebaseFirestore = Firebase.firestore
 
-        // Mapper (si no tiene interfaz)
-       // @Provides
-       // @Singleton
-        //fun provideTaskMapper(): TaskMapper = TaskMapper()
+        @Provides
+        fun provideFirebaseTaskApi(firestore: FirebaseFirestore): FirebaseTaskApi =
+            FirebaseTaskApiImpl(firestore)
 
-        // WorkManager
-       // @Provides
-        //@Singleton
-       // fun provideWorkManager(@ApplicationContext context: Context): WorkManager {
-       //     return WorkManager.getInstance(context)
-      //  }
+        @Provides
+        @Singleton
+        fun provideConflictResolver(): ConflictResolver = ConflictResolver()
+
+        @Provides
+        @Singleton
+        fun provideSyncManager(
+            repository: TaskRepository,
+            conflictResolver: ConflictResolver,
+            dispatchers: DispatchersProvider
+        ): SyncManager = SyncManager(repository, conflictResolver, dispatchers.io)
     }
 }
 
