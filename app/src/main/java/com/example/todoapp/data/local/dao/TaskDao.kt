@@ -26,7 +26,7 @@ interface TaskDao {
     suspend fun deleteTask(task: TaskEntity): Int
 
     @Query("SELECT * FROM tasks ORDER BY created_at DESC")
-    suspend fun getAllTasks(): List<TaskEntity>
+    fun getAllTasksFlow(): Flow<List<TaskEntity>>
 
     @Query("SELECT * FROM tasks WHERE is_completed = :isCompleted")
     fun getTasksByCompletion(isCompleted: Boolean): Flow<List<TaskEntity>>

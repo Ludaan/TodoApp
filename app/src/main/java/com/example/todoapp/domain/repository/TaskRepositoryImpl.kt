@@ -1,11 +1,14 @@
 package com.example.todoapp.domain.repository
 
+import kotlinx.coroutines.flow.map
 import android.os.Build
 import androidx.annotation.RequiresApi
+import com.example.todoapp.core.util.DataState
 import com.example.todoapp.data.local.dao.TaskDao
 import com.example.todoapp.data.mapper.TaskMapper
 import com.example.todoapp.data.remote.api.FirebaseTaskApi
 import com.example.todoapp.domain.model.Task
+import kotlinx.coroutines.flow.Flow
 import javax.inject.Inject
 
 class TaskRepositoryImpl @Inject constructor(
@@ -14,13 +17,21 @@ class TaskRepositoryImpl @Inject constructor(
 ) : TaskRepository {
 
     @RequiresApi(Build.VERSION_CODES.O)
-    override suspend fun getLocalTasks(): List<Task> {
-        return taskDao.getAllTasks().map { TaskMapper.fromLocal(it) }
+    override fun getLocalTasks(): Flow<List<Task>> {
+        return taskDao.getAllTasksFlow().map { list ->
+            list.map { TaskMapper.fromLocal(it) }
+        }
     }
 
     @RequiresApi(Build.VERSION_CODES.O)
-    override suspend fun getRemoteTasks(): List<Task> {
-        return firebaseApi.getTasks().map { TaskMapper.fromRemote(it) }
+    override fun getRemoteTasks(): Flow<DataState<List<Task>>> {
+        return firebaseApi.getTasks().map { state ->
+            when (state) {
+                is DataState.Loading -> DataState.Loading
+                is DataState.Success -> DataState.Success(state.data.map { TaskMapper.fromRemote(it) })
+                is DataState.Error -> DataState.Error(state.message)
+            }
+        }
     }
 
     @RequiresApi(Build.VERSION_CODES.O)
