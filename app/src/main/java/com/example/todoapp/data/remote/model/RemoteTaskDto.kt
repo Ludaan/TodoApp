@@ -5,6 +5,7 @@ import com.google.firebase.Timestamp
 data class RemoteTaskDto(
     val id: String = "",
     val title: String = "",
+    val description: String = "",
     val isCompleted: Boolean = false,
     val createdAt: Timestamp = Timestamp.now(),
     val color: Int = 0,
