@@ -1,4 +1,4 @@
-package com.example.todoapp.presentation.task
+package com.example.todoapp.presentation
 
 import android.os.Build
 import androidx.annotation.RequiresApi
