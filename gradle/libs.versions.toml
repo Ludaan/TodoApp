@@ -1,6 +1,7 @@
 [versions]
 agp = "8.10.1"
 kotlin = "2.0.21"
+kps = "2.0.21-1.0.27"
 coreKtx = "1.10.1"
 junit = "4.13.2"
 junitVersion = "1.1.5"
@@ -22,7 +23,6 @@ timber = "5.0.1"
 work = "2.9.0"
 firebaseBom = "32.5.0"
 accompanist = "0.34.0"
-kps =  "1.9.0-1.0.13"
 
 # SDK
 minSdk = "24"

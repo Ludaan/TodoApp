@@ -4,3 +4,4 @@
 # Android Studio/IntelliJ
 .idea/
 *.iml
+/inspectionProfiles/Project_Default.xml

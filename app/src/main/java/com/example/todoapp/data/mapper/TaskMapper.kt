@@ -21,7 +21,8 @@ object TaskMapper {
         limitDate = dto.limitDate.toInstant(),
         limitHour = dto.limitHour.toInstant(),
         type = dto.type,
-        repeatAt = dto.repeatAt
+        repeatAt = dto.repeatAt,
+        description = dto.description
     )
 
     @RequiresApi(Build.VERSION_CODES.O)
@@ -34,7 +35,8 @@ object TaskMapper {
         limitDate = Timestamp(task.limitDate.epochSecond, task.limitDate.nano),
         limitHour = Timestamp(task.limitHour.epochSecond, task.limitHour.nano),
         type = task.type,
-        repeatAt = task.repeatAt
+        repeatAt = task.repeatAt,
+        description = task.description
     )
 
     @RequiresApi(Build.VERSION_CODES.O)
@@ -47,7 +49,8 @@ object TaskMapper {
         limitDate = Instant.ofEpochMilli(entity.limitDate),
         limitHour = Instant.ofEpochMilli(entity.limitHour),
         type = entity.type,
-        repeatAt = entity.repeatAt
+        repeatAt = entity.repeatAt,
+        description = entity.description
     )
 
     @RequiresApi(Build.VERSION_CODES.O)
@@ -60,6 +63,7 @@ object TaskMapper {
         limitDate = task.limitDate.toEpochMilli(),
         limitHour = task.limitHour.toEpochMilli(),
         type = task.type,
-        repeatAt = task.repeatAt
+        repeatAt = task.repeatAt,
+        description = task.description
     )
 }
