@@ -19,6 +19,6 @@ fun TaskListScreen(modifier: Modifier) {
 
 @Preview(showSystemUi = true)
 @Composable
-fun prev(){
+fun Prev(){
     TaskListScreen(Modifier)
 }
