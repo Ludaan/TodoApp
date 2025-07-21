@@ -1,9 +1,11 @@
 package com.example.todoapp.presentation
 
+import android.os.Build
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
+import androidx.annotation.RequiresApi
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.shape.CircleShape
@@ -21,6 +23,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import androidx.navigation.compose.rememberNavController
 import com.example.todoapp.presentation.navigation.AppNavGraph
+import com.example.todoapp.presentation.navigation.Screen
 import com.example.todoapp.ui.components.bottom_bar.BottomBar
 import com.example.todoapp.ui.components.bottom_bar.BottomTab
 import com.example.todoapp.ui.theme.PrimaryBlue
@@ -28,6 +31,7 @@ import com.example.todoapp.ui.theme.Slate50
 import com.example.todoapp.ui.theme.TodoAppTheme
 
 class MainActivity : ComponentActivity() {
+    @RequiresApi(Build.VERSION_CODES.O)
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
@@ -53,7 +57,10 @@ class MainActivity : ComponentActivity() {
                         )
                     },
                     floatingActionButton = { FloatingActionButton(
-                        onClick = {},
+                        onClick = {
+                            navController.navigate(Screen.CreateTask.route)
+
+                        },
                         containerColor = PrimaryBlue,
                         contentColor = Slate50,
                         shape = RoundedCornerShape(16.dp)

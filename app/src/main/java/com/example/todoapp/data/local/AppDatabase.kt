@@ -8,7 +8,7 @@ import com.example.todoapp.data.local.entities.TaskEntity
 @Database(
     entities = [TaskEntity::class],
     version = 1,
-    exportSchema = true
+    exportSchema = false
 )
 abstract class AppDatabase : RoomDatabase() {
     abstract fun taskDao(): TaskDao
