@@ -45,7 +45,7 @@ fun TaskListScreen(modifier: Modifier) {
     Column(modifier = modifier.fillMaxSize(), horizontalAlignment = Alignment.CenterHorizontally) {
 
         Text(
-            modifier = Modifier.padding(top = 24.dp, bottom = 24.dp),
+            modifier = Modifier.padding(top = 8.dp, bottom = 24.dp),
             text = "Your Task",
             style = AppTypography.headlineLarge.copy(color = TextPrimary)
         )
