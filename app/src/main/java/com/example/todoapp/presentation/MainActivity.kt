@@ -8,7 +8,6 @@ import androidx.activity.enableEdgeToEdge
 import androidx.annotation.RequiresApi
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
@@ -21,6 +20,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
+import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import com.example.todoapp.presentation.navigation.AppNavGraph
 import com.example.todoapp.presentation.navigation.Screen
@@ -40,42 +40,49 @@ class MainActivity : ComponentActivity() {
                 val navController = rememberNavController()
                 var selectedTab by remember { mutableStateOf(BottomTab.Tasks) }
 
-                Scaffold(modifier = Modifier.fillMaxSize(),
+                val navBackStackEntry by navController.currentBackStackEntryAsState()
+                val currentRoute = navBackStackEntry?.destination?.route
+
+                Scaffold(
+                    modifier = Modifier.fillMaxSize(),
                     bottomBar = {
                         BottomBar(
                             selectedTab = selectedTab,
-                            onTabSelected = { tab  ->
+                            onTabSelected = { tab ->
                                 selectedTab = tab
-                                navController.navigate(tab.screen.route){
+                                navController.navigate(tab.screen.route) {
                                     launchSingleTop = true
                                     restoreState = true
-                                    popUpTo(navController.graph.startDestinationId){
+                                    popUpTo(navController.graph.startDestinationId) {
                                         saveState = true
                                     }
                                 }
                             }
                         )
                     },
-                    floatingActionButton = { FloatingActionButton(
-                        onClick = {
-                            navController.navigate(Screen.CreateTask.route)
+                    floatingActionButton = {
+                        if (currentRoute == Screen.TaskList.route) {
+                            FloatingActionButton(
+                                onClick = {
+                                    navController.navigate(Screen.CreateTask.route)
+                                },
+                                containerColor = PrimaryBlue,
+                                contentColor = Slate50,
+                                shape = RoundedCornerShape(16.dp)
+                            ) {
+                                Icon(
+                                    imageVector = Icons.Default.Add,
+                                    contentDescription = ""
+                                )
+                            }
+                        }
 
-                        },
-                        containerColor = PrimaryBlue,
-                        contentColor = Slate50,
-                        shape = RoundedCornerShape(16.dp)
-                    ) {
-                        Icon(
-                            imageVector = Icons.Default.Add,
-                            contentDescription = ""
-                        )
-                    }
                     })
                 { innerPadding ->
                     AppNavGraph(
                         navController = navController,
-                        modifier =  Modifier.padding(innerPadding),
-                        onTabChange = { tab -> selectedTab = tab}
+                        modifier = Modifier.padding(innerPadding),
+                        onTabChange = { tab -> selectedTab = tab }
                     )
                 }
             }

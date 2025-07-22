@@ -19,15 +19,21 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowDropDown
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
+import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
+import androidx.compose.material3.TimeInput
+import androidx.compose.material3.TimePicker
+import androidx.compose.material3.rememberTimePickerState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
 import androidx.compose.ui.graphics.Color
@@ -37,6 +43,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.example.todoapp.ui.theme.AppTypography
 import com.example.todoapp.ui.theme.InputBackground
@@ -45,6 +52,7 @@ import com.example.todoapp.ui.theme.TextPrimary
 import com.example.todoapp.ui.theme.TextSecondary
 import java.time.LocalTime
 import java.time.format.DateTimeFormatter
+import java.util.Calendar
 
 @RequiresApi(Build.VERSION_CODES.O)
 @Composable
@@ -63,14 +71,15 @@ fun CreateTaskScreen() {
         Color(0xFF03A9F4)  // Celeste
     )
     var repeatDaily by remember { mutableStateOf(false) }
-    val repeatTime by remember { mutableStateOf(LocalTime.of(9, 0)) }
     var showTimePicker by remember { mutableStateOf(false) }
     val endRepeat by remember { mutableStateOf("Never") }
+
+    var repeatTime by remember { mutableStateOf(LocalTime.of(9, 0)) }
 
     Column(
         modifier = Modifier
             .fillMaxSize()
-            .padding(20.dp)
+            .padding(16.dp)
     ) {
         Text(
             text = "New Task",
@@ -90,8 +99,7 @@ fun CreateTaskScreen() {
                 )
             },
             modifier = Modifier
-                .fillMaxWidth()
-                .padding(horizontal = 16.dp),
+                .fillMaxWidth(),
             shape = RoundedCornerShape(12.dp),
             singleLine = true,
             textStyle = AppTypography.titleMedium.copy(color = TextPrimary),
@@ -222,10 +230,9 @@ fun CreateTaskScreen() {
             verticalAlignment = Alignment.CenterVertically
         ) {
             Text("Repeat Time", style = AppTypography.titleMedium.copy(color = TextPrimary))
-            Text(
-                text = repeatTime.format(DateTimeFormatter.ofPattern("h:mm a")),
-                style = AppTypography.bodySmall.copy(color = TextSecondary),
-                modifier = Modifier.clickable { showTimePicker = true }
+            RepeatTimePicker(
+                repeatTime = repeatTime,
+                onTimeSelected = {repeatTime = it}
             )
         }
 
@@ -265,6 +272,75 @@ fun CreateTaskScreen() {
     if (showTimePicker) {
         // Mostrar time picker personalizado o usar la librería de tu preferencia
     }
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun RepeatTimePicker(
+    repeatTime: LocalTime,
+    onTimeSelected: (LocalTime) -> Unit
+) {
+    var showTimePicker by remember { mutableStateOf(false) }
+
+    val timePickerState = rememberTimePickerState(
+        initialHour = repeatTime.hour,
+        initialMinute = repeatTime.minute,
+        is24Hour = false
+    )
+
+    // Contenido de UI
+    Row(
+        modifier = Modifier.fillMaxWidth(),
+        horizontalArrangement = Arrangement.SpaceBetween,
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        Text(
+            text = "Repeat Time",
+            style = AppTypography.titleMedium.copy(color = TextPrimary)
+        )
+        Text(
+            text = repeatTime.format(DateTimeFormatter.ofPattern("h:mm a")),
+            style = AppTypography.bodySmall.copy(color = TextSecondary),
+            modifier = Modifier.clickable { showTimePicker = true }
+        )
+    }
+
+    // AlertDialog con TimePicker
+    if (showTimePicker) {
+        AlertDialog(
+            onDismissRequest = { showTimePicker = false },
+            confirmButton = {
+                TextButton(onClick = {
+                    showTimePicker = false
+                    val selectedTime = LocalTime.of(
+                        timePickerState.hour,
+                        timePickerState.minute
+                    )
+                    onTimeSelected(selectedTime)
+                }) {
+                    Text("OK", color = PrimaryBlue)
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { showTimePicker = false }) {
+                    Text("Cancel", color = TextSecondary)
+                }
+            },
+            title = {
+                Text("Select Time", style = AppTypography.titleMedium)
+            },
+            text = {
+                TimePicker(state = timePickerState)
+            }
+        )
+    }
+}
+
+@RequiresApi(Build.VERSION_CODES.O)
+@Preview(showSystemUi = true)
+@Composable
+fun Prevv(){
+    CreateTaskScreen()
 }
 
 
