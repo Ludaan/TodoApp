@@ -1,7 +1,7 @@
 package com.example.todoapp.domain.model
 
-import androidx.room.Entity
 import java.time.Instant
+import java.time.LocalTime
 
 data class Task(
     val id: String,
@@ -11,7 +11,7 @@ data class Task(
     val createdAt: Instant,
     val color: Int,
     val limitDate: Instant,
-    val limitHour: Instant,
     val type: Int,
-    val repeatAt : Int
+    val repeatAt : LocalTime,
+    val repeatDaily : Boolean
 )

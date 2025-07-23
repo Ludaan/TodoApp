@@ -20,8 +20,10 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowDropDown
 import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.DatePickerDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.DatePicker
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -31,18 +33,18 @@ import androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
-import androidx.compose.material3.TimeInput
 import androidx.compose.material3.TimePicker
+import androidx.compose.material3.rememberDatePickerState
 import androidx.compose.material3.rememberTimePickerState
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.remember
-import androidx.compose.ui.graphics.Color
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.example.todoapp.ui.theme.AppTypography
@@ -50,9 +52,11 @@ import com.example.todoapp.ui.theme.InputBackground
 import com.example.todoapp.ui.theme.PrimaryBlue
 import com.example.todoapp.ui.theme.TextPrimary
 import com.example.todoapp.ui.theme.TextSecondary
+import java.time.Instant
 import java.time.LocalTime
+import java.time.ZoneId
 import java.time.format.DateTimeFormatter
-import java.util.Calendar
+import java.util.Locale
 
 @RequiresApi(Build.VERSION_CODES.O)
 @Composable
@@ -75,6 +79,12 @@ fun CreateTaskScreen() {
     val endRepeat by remember { mutableStateOf("Never") }
 
     var repeatTime by remember { mutableStateOf(LocalTime.of(9, 0)) }
+
+    var endRepeatInstant by remember { mutableStateOf(Instant.now()) }
+    val formatter = DateTimeFormatter.ofPattern("dd MMM yyyy", Locale("es", "MX")).withZone(ZoneId.systemDefault())
+    val endRepeatText = formatter.format(endRepeatInstant)
+
+
 
     Column(
         modifier = Modifier
@@ -224,32 +234,22 @@ fun CreateTaskScreen() {
         Spacer(modifier = Modifier.height(16.dp))
 
         // Hora
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.SpaceBetween,
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            Text("Repeat Time", style = AppTypography.titleMedium.copy(color = TextPrimary))
-            RepeatTimePicker(
-                repeatTime = repeatTime,
-                onTimeSelected = {repeatTime = it}
-            )
-        }
+        RepeatTimePicker(
+            repeatTime = repeatTime,
+            onTimeSelected = { repeatTime = it }
+        )
 
         Spacer(modifier = Modifier.height(16.dp))
 
         // Fin de repetición
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.SpaceBetween,
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            Text("End Repeat", style = AppTypography.titleMedium.copy(color = TextPrimary))
-            Text(
-                text = endRepeat,
-                style = AppTypography.bodySmall.copy(color = TextSecondary)
-            )
-        }
+        EndRepeatRow(
+            endRepeat = endRepeatText,
+            onDateSelected = { millis ->
+                millis?.let {
+                    endRepeatInstant = Instant.ofEpochMilli(it)
+                }
+            }
+        )
 
         Spacer(modifier = Modifier.weight(1f))
 
@@ -336,10 +336,58 @@ fun RepeatTimePicker(
     }
 }
 
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun EndRepeatRow(
+    endRepeat: String,
+    onDateSelected: (Long?) -> Unit
+) {
+    var showDatePicker by remember { mutableStateOf(false) }
+
+    if (showDatePicker) {
+        val datePickerState = rememberDatePickerState()
+
+        DatePickerDialog(
+            onDismissRequest = { showDatePicker = false },
+            confirmButton = {
+                TextButton(onClick = {
+                    onDateSelected(datePickerState.selectedDateMillis)
+                    showDatePicker = false
+                }) {
+                    Text("OK", style = AppTypography.bodySmall.copy(color = PrimaryBlue))
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { showDatePicker = false }) {
+                    Text("Cancel", style = AppTypography.bodySmall.copy(color = TextSecondary))
+                }
+            }
+        ) {
+            DatePicker(state = datePickerState)
+        }
+    }
+
+    Row(
+        modifier = Modifier.fillMaxWidth(),
+        horizontalArrangement = Arrangement.SpaceBetween,
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        Text(
+            "End Repeat",
+            style = AppTypography.titleMedium.copy(color = TextPrimary)
+        )
+        Text(
+            text = endRepeat,
+            style = AppTypography.bodySmall.copy(color = TextSecondary),
+            modifier = Modifier.clickable { showDatePicker = true }
+        )
+    }
+}
+
 @RequiresApi(Build.VERSION_CODES.O)
 @Preview(showSystemUi = true)
 @Composable
-fun Prevv(){
+fun Prevv() {
     CreateTaskScreen()
 }
 

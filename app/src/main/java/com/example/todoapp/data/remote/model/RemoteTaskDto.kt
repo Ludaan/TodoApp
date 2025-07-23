@@ -10,8 +10,7 @@ data class RemoteTaskDto(
     val createdAt: Timestamp = Timestamp.now(),
     val color: Int = 0,
     val limitDate: Timestamp = Timestamp.now(),
-    val limitHour: Timestamp = Timestamp.now(),
     val type: Int = 0,
-    val repeatAt: Int = 0
+    val repeatAt: String = "09:00", //Formato HH:mm
+    val repeatDaily: Boolean
 )
-
