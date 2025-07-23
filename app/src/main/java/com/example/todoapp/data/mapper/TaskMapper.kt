@@ -8,8 +8,12 @@ import com.example.todoapp.data.remote.model.RemoteTaskDto
 import com.example.todoapp.domain.model.Task
 import com.google.firebase.Timestamp
 import java.time.Instant
+import java.time.LocalTime
+import java.time.format.DateTimeFormatter
 
 object TaskMapper {
+
+    private val timeFormatter = DateTimeFormatter.ofPattern("HH:mm")
 
     @RequiresApi(Build.VERSION_CODES.O)
     fun fromRemote(dto: RemoteTaskDto): Task = Task(
@@ -19,10 +23,10 @@ object TaskMapper {
         createdAt = dto.createdAt.toInstant(),
         color = dto.color,
         limitDate = dto.limitDate.toInstant(),
-        limitHour = dto.limitHour.toInstant(),
         type = dto.type,
-        repeatAt = dto.repeatAt,
-        description = dto.description
+        repeatAt = LocalTime.parse(dto.repeatAt, timeFormatter),
+        description = dto.description,
+        repeatDaily = dto.repeatDaily
     )
 
     @RequiresApi(Build.VERSION_CODES.O)
@@ -33,10 +37,10 @@ object TaskMapper {
         createdAt = Timestamp(task.createdAt.epochSecond, task.createdAt.nano),
         color = task.color,
         limitDate = Timestamp(task.limitDate.epochSecond, task.limitDate.nano),
-        limitHour = Timestamp(task.limitHour.epochSecond, task.limitHour.nano),
         type = task.type,
-        repeatAt = task.repeatAt,
-        description = task.description
+        repeatAt = task.repeatAt.format(timeFormatter),
+        description = task.description,
+        repeatDaily = task.repeatDaily
     )
 
     @RequiresApi(Build.VERSION_CODES.O)
@@ -47,10 +51,10 @@ object TaskMapper {
         createdAt = Instant.ofEpochMilli(entity.createdAt),
         color = entity.color,
         limitDate = Instant.ofEpochMilli(entity.limitDate),
-        limitHour = Instant.ofEpochMilli(entity.limitHour),
         type = entity.type,
-        repeatAt = entity.repeatAt,
-        description = entity.description
+        repeatAt = LocalTime.parse(entity.repeatAt, timeFormatter),
+        description = entity.description,
+        repeatDaily = entity.repeatDaily
     )
 
     @RequiresApi(Build.VERSION_CODES.O)
@@ -61,9 +65,9 @@ object TaskMapper {
         createdAt = task.createdAt.toEpochMilli(),
         color = task.color,
         limitDate = task.limitDate.toEpochMilli(),
-        limitHour = task.limitHour.toEpochMilli(),
         type = task.type,
-        repeatAt = task.repeatAt,
-        description = task.description
+        repeatAt = task.repeatAt.format(timeFormatter),
+        description = task.description,
+        repeatDaily = task.repeatDaily
     )
 }
