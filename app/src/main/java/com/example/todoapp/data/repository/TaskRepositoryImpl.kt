@@ -1,4 +1,4 @@
-package com.example.todoapp.domain.repository
+package com.example.todoapp.data.repository
 
 import kotlinx.coroutines.flow.map
 import android.os.Build
@@ -8,6 +8,7 @@ import com.example.todoapp.data.local.dao.TaskDao
 import com.example.todoapp.data.mapper.TaskMapper
 import com.example.todoapp.data.remote.api.FirebaseTaskApi
 import com.example.todoapp.domain.model.Task
+import com.example.todoapp.domain.repository.TaskRepository
 import kotlinx.coroutines.flow.Flow
 import javax.inject.Inject
 

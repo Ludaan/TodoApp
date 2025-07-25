@@ -3,7 +3,7 @@ package com.example.todoapp.domain.use_case.sync
 import android.os.Build
 import androidx.annotation.RequiresApi
 import com.example.todoapp.core.util.DataState
-import com.example.todoapp.data.sync.SyncManager
+import com.example.todoapp.domain.logic.sync.SyncManager
 import kotlinx.coroutines.flow.Flow
 import javax.inject.Inject
 
