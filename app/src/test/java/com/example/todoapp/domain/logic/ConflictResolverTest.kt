@@ -2,6 +2,10 @@ package com.example.todoapp.domain.logic
 
 import com.example.todoapp.domain.logic.sync.ConflictResolver
 import com.example.todoapp.domain.model.Task
+import org.junit.Assert
+import org.junit.Assert.assertEquals
+import org.junit.Before
+import org.junit.Test
 import java.time.Instant
 import java.time.LocalTime
 
@@ -117,5 +121,113 @@ class ConflictResolverTest {
         repeatAt = noonTime,
         repeatDaily = false // Podrías cambiar otro campo si tu lógica de "else" es más sofisticada
     )
+
+    @Before
+    fun setUp(){
+        conflictResolver = ConflictResolver()
+    }
+
+    @Test
+    fun `resolve cuando tarea local es mas nueva que remota deberia retornar local`(){
+        val localTasks = listOf(task1LocalNewer)
+        val remoteTasks = listOf(task1RemoteOlder)
+
+        val result = conflictResolver.resolve(localTasks,remoteTasks)
+
+        assertEquals(1, result.size)
+        assertEquals(task1LocalNewer, result[0])
+    }
+
+    @Test
+    fun `resolve cuando tarea remota es mas nueva que local deberia retornar remota`() {
+        val localTasks = listOf(task2LocalOlder)
+        val remoteTasks = listOf(task2RemoteNewer)
+
+        val result = conflictResolver.resolve(localTasks, remoteTasks)
+
+        assertEquals(1, result.size)
+        assertEquals(task2RemoteNewer, result[0])
+    }
+
+    @Test
+    fun `resolve cuando tarea solo existe localmente deberia retornar local`() {
+        val localTasks = listOf(task3OnlyLocal)
+        val remoteTasks = emptyList<Task>()
+
+        val result = conflictResolver.resolve(localTasks, remoteTasks)
+
+        assertEquals(1, result.size)
+        assertEquals(task3OnlyLocal, result[0])
+    }
+
+    @Test
+    fun `resolve cuando tarea solo existe remotamente deberia retornar remota`() {
+        val localTasks = emptyList<Task>()
+        val remoteTasks = listOf(task4OnlyRemote)
+
+        val result = conflictResolver.resolve(localTasks, remoteTasks)
+
+        assertEquals(1, result.size)
+        assertEquals(task4OnlyRemote, result[0])
+    }
+
+    @Test
+    fun `resolve cuando createdAt es identico deberia retornar remota (segun logica actual)`() {
+        // La lógica del ConflictResolver que proporcionaste:
+        // merged[id] = when {
+        //    localTask == null -> remoteTask!!
+        //    remoteTask == null -> localTask
+        //    localTask.createdAt > remoteTask.createdAt -> localTask
+        //    else -> remoteTask // Se elige remote si remoteTask.createdAt >= localTask.createdAt
+        // }
+        val localTasks = listOf(task5SameTimestamp)
+        val remoteTasks = listOf(task5SameTimestampRemote)
+
+        val result = conflictResolver.resolve(localTasks, remoteTasks)
+
+        assertEquals(1, result.size)
+        // Dado que remoteTask.createdAt == localTask.createdAt, el 'else' se activa
+        assertEquals(task5SameTimestampRemote, result[0])
+    }
+
+    @Test
+    fun `resolve con listas vacias deberia retornar lista vacia`() {
+        val localTasks = emptyList<Task>()
+        val remoteTasks = emptyList<Task>()
+
+        val result = conflictResolver.resolve(localTasks, remoteTasks)
+
+        Assert.assertTrue(result.isEmpty())
+    }
+
+    @Test
+    fun `resolve con multiples tareas y diferentes escenarios`() {
+        val localTasks = listOf(task1LocalNewer, task2LocalOlder, task3OnlyLocal, task5SameTimestamp)
+        val remoteTasks = listOf(task1RemoteOlder, task2RemoteNewer, task4OnlyRemote, task5SameTimestampRemote)
+
+        // Resultados esperados basados en la lógica de conflicto:
+        // task1LocalNewer (local es más nuevo)
+        // task2RemoteNewer (remoto es más nuevo)
+        // task3OnlyLocal (solo existe localmente)
+        // task4OnlyRemote (solo existe remotamente)
+        // task5SameTimestampRemote (createdAt es igual, se prefiere remoto)
+        val expectedTasks = listOf(
+            task1LocalNewer,
+            task2RemoteNewer,
+            task3OnlyLocal,
+            task4OnlyRemote,
+            task5SameTimestampRemote
+        )
+        val expectedIds = expectedTasks.map { it.id }.toSet()
+
+        val result = conflictResolver.resolve(localTasks, remoteTasks)
+
+        assertEquals(expectedTasks.size, result.size)
+        assertEquals(expectedIds, result.map { it.id }.toSet()) // Verifica que todos los IDs esperados estén
+
+        // Verifica que cada tarea esperada esté en el resultado.
+        // Usar un Set para la comparación es más robusto si el orden no importa.
+        assertEquals(expectedTasks.toSet(), result.toSet())
+    }
 
 }
