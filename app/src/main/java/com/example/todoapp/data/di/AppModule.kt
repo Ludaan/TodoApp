@@ -1,4 +1,4 @@
-package com.example.todoapp.core.di
+package com.example.todoapp.data.di
 
 import android.content.Context
 import androidx.room.Room
@@ -8,10 +8,10 @@ import com.example.todoapp.data.local.AppDatabase
 import com.example.todoapp.data.local.dao.TaskDao
 import com.example.todoapp.data.remote.api.FirebaseTaskApi
 import com.example.todoapp.data.remote.api.FirebaseTaskApiImpl
-import com.example.todoapp.data.sync.ConflictResolver
-import com.example.todoapp.data.sync.SyncManager
+import com.example.todoapp.domain.logic.sync.ConflictResolver
+import com.example.todoapp.domain.logic.sync.SyncManager
 import com.example.todoapp.domain.repository.TaskRepository
-import com.example.todoapp.domain.repository.TaskRepositoryImpl
+import com.example.todoapp.data.repository.TaskRepositoryImpl
 import com.google.firebase.Firebase
 import com.google.firebase.firestore.FirebaseFirestore
 import com.google.firebase.firestore.firestore

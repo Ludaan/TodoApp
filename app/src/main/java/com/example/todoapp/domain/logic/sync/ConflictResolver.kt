@@ -1,4 +1,4 @@
-package com.example.todoapp.data.sync
+package com.example.todoapp.domain.logic.sync
 
 import android.os.Build
 import androidx.annotation.RequiresApi
