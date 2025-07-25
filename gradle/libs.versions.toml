@@ -47,6 +47,8 @@ espressoCore = "3.5.1"
 mockk = "1.13.11"
 turbine = "1.1.0"
 coreKtx = "1.10.1"
+kotlinxCoroutinesTest = "1.8.0"
+androidxTestCoreKtx = "1.5.0"
 
 #
 desugarJdk = "2.0.4"
@@ -119,6 +121,8 @@ androidx-espresso-core = { group = "androidx.test.espresso", name = "espresso-co
 mockk-android = { group = "io.mockk", name = "mockk-android", version.ref = "mockk" }
 turbine = { group = "app.cash.turbine", name = "turbine", version.ref = "turbine" }
 hilt-android-testing = { group = "com.google.dagger", name = "hilt-android-testing", version.ref = "hilt" }
+kotlinx-coroutines-test = { group = "org.jetbrains.kotlinx", name = "kotlinx-coroutines-test", version.ref = "kotlinxCoroutinesTest" }
+androidx-test-core-ktx = { group = "androidx.test", name = "core-ktx", version.ref = "androidxTestCoreKtx" }
 
 #
 desugarJdkLibs = { group = "com.android.tools", name = "desugar_jdk_libs", version.ref = "desugarJdk" }
