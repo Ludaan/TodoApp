@@ -31,6 +31,7 @@ class TaskRepositoryImpl @Inject constructor(
                 is DataState.Loading -> DataState.Loading
                 is DataState.Success -> DataState.Success(state.data.map { TaskMapper.fromRemote(it) })
                 is DataState.Error -> DataState.Error(state.message)
+                DataState.Idle -> DataState.Idle
             }
         }
     }

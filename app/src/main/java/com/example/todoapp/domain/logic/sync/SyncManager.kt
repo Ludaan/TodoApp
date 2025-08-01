@@ -45,6 +45,7 @@ class SyncManager @Inject constructor(
                     }
 
                     is DataState.Error -> emit(DataState.Error(state.message))
+                    DataState.Idle -> emit(DataState.Idle)
                 }
             }
 

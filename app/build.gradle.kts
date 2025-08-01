@@ -92,6 +92,7 @@ dependencies {
     implementation(libs.timber)
     implementation(libs.work.runtime.ktx)
     implementation(libs.accompanist.permissions)
+    implementation(libs.lottie.compose)
 
     // Testing
     testImplementation(libs.junit)
