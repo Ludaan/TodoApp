@@ -17,4 +17,8 @@ interface TaskRepository {
 
     suspend fun deleteLocalTask(id: String)
     suspend fun deleteRemoteTask(id: String)
+
+    suspend fun updateLocalTaskCompletionStatus(taskId: String, isCompleted: Boolean)
+    suspend fun updateRemoteTaskCompletionStatus(taskId: String, isCompleted: Boolean)
+
 }

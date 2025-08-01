@@ -22,6 +22,15 @@ interface TaskDao {
     @Update
     suspend fun updateTask(task: TaskEntity): Int
 
+    /**
+     * Actualiza el estado de completado de una tarea específica.
+     * @param taskId El ID de la tarea a actualizar.
+     * @param isCompleted El nuevo estado de completado (true o false).
+     */
+
+    @Query("UPDATE tasks SET is_completed = :isCompleted WHERE id = :taskId")
+    suspend fun updateTaskCompletionStatus(taskId: String, isCompleted: Boolean)
+
     @Delete
     suspend fun deleteTask(task: TaskEntity): Int
 
@@ -37,13 +46,11 @@ interface TaskDao {
     @Query("SELECT * FROM tasks WHERE sync_status = 'CONFLICT'")
     fun getConflictedTasks(): Flow<List<TaskEntity>>
 
-    @Query("UPDATE tasks SET is_completed = :isCompleted WHERE id = :taskId")
-    suspend fun updateCompletionStatus(taskId: String, isCompleted: Boolean): Int
 
     @Transaction
     suspend fun markAllAsCompleted() {
         getIncompleteTasks().forEach { task ->
-            updateCompletionStatus(task.id, true)
+            updateTaskCompletionStatus(task.id, true)
         }
     }
 

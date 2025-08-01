@@ -8,4 +8,5 @@ interface FirebaseTaskApi {
     fun getTasks(): Flow<DataState<List<RemoteTaskDto>>>
     suspend fun addOrUpdateTask(task: RemoteTaskDto)
     suspend fun deleteTask(id: String)
+    suspend fun updateTaskCompletionStatus(id: String, isCompleted: Boolean)
 }

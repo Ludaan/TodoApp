@@ -58,6 +58,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
@@ -205,9 +206,8 @@ fun TaskListScreen(
         TaskListContent(
             modifier = Modifier.padding(innerPadding),
             uiState = uiState,
-            onToggleComplete = { task, isCompleted ->
-                Toast.makeText(context, "Toggle ${task.title} to $isCompleted", Toast.LENGTH_SHORT)
-                    .show()
+            onTaskCheckChanged = { task ->
+                viewModel.toggleTaskCompletion(task)
             },
             onAttemptDeleteTask = { taskId -> // Cambiado para reflejar que es un intento
                 taskToDeleteId = taskId
@@ -221,7 +221,7 @@ fun TaskListScreen(
 fun TaskListContent(
     modifier: Modifier = Modifier,
     uiState: TaskListUiState,
-    onToggleComplete: (task: Task, isChecked: Boolean) -> Unit,
+    onTaskCheckChanged: (task: Task) -> Unit, // Solo la tarea
     onAttemptDeleteTask: (taskId: String) -> Unit
 ) {
     val loadingTasksComposition by rememberLottieComposition(LottieCompositionSpec.Asset("loading_task_lottie.json"))
@@ -301,7 +301,7 @@ fun TaskListContent(
                     TaskCheckboxItem( // El que estaba en tu código original
                         task = task,
                         checked = task.isCompleted,
-                        onCheckedChange = { isChecked -> onToggleComplete(task, isChecked) },
+                        onCheckedChange = { onTaskCheckChanged(task) },
                         onDeleteRequest = { onAttemptDeleteTask(task.id) }
                     )
                 }
@@ -314,8 +314,8 @@ fun TaskListContent(
 @Composable
 fun TaskCheckboxItem(
     task: Task,
-    checked: Boolean,
-    onCheckedChange: (Boolean) -> Unit,
+    checked: Boolean, // Este 'checked' viene de task.isCompleted
+    onCheckedChange: () -> Unit,
     onDeleteRequest: () -> Unit
 ) {
     val backgroundColor =
@@ -328,7 +328,7 @@ fun TaskCheckboxItem(
             .fillMaxWidth()
             .clip(RoundedCornerShape(cornerRadius))
             .clickable(
-                onClick = { onCheckedChange(!checked) },
+                onClick = { onCheckedChange() },
                 role = Role.Checkbox
             )
             .background(color = backgroundColor)
@@ -338,7 +338,9 @@ fun TaskCheckboxItem(
 
         Checkbox(
             checked = checked,
-            onCheckedChange = onCheckedChange,
+            onCheckedChange = { _ ->
+                onCheckedChange()
+            },
             colors = CheckboxDefaults.colors(
                 checkedColor = PrimaryBlue,
                 uncheckedColor = BorderGray,
@@ -346,7 +348,7 @@ fun TaskCheckboxItem(
             )
         )
 
-        Spacer(modifier = Modifier.width(8.dp)) // Espacio entre checkbox y el color dot
+        Spacer(modifier = Modifier.width(8.dp))
 
         Box(
             modifier = Modifier
@@ -355,18 +357,23 @@ fun TaskCheckboxItem(
                 .background(Color(task.color))
         )
 
-        Spacer(modifier = Modifier.width(12.dp)) // Espacio entre color dot y texto
+        Spacer(modifier = Modifier.width(12.dp))
 
         Column(modifier = Modifier.weight(1f)) {
             Text(
                 text = task.title,
-                style = AppTypography.titleMedium.copy(color = TextPrimary),
+                style = AppTypography.titleMedium.copy(
+                    color = if (checked) TextSecondary else TextPrimary, // Opcional: Cambiar color del texto si está completado
+                    textDecoration = if (checked) TextDecoration.LineThrough else null // <--- AQUÍ ESTÁ EL CAMBIO
+                ),
                 maxLines = 1,
                 overflow = TextOverflow.Ellipsis
             )
-            // Mostrar la descripción si existe y no es muy larga, o la hora de repetición
+
+            // El texto secundario (descripción/hora) usualmente no se tacha,
+            // pero podrías aplicarle una lógica similar si lo deseas.
             val secondaryText =
-                if (task.description.isNotBlank() && task.description.length < 50) { // Límite arbitrario
+                if (task.description.isNotBlank() && task.description.length < 50) {
                     task.description
                 } else {
                     "Repetir a las: ${task.repeatAt.format(DateTimeFormatter.ofPattern("HH:mm"))}"
@@ -374,7 +381,11 @@ fun TaskCheckboxItem(
 
             Text(
                 text = secondaryText,
-                style = AppTypography.bodySmall.copy(color = TextSecondary),
+                style = AppTypography.bodySmall.copy(
+                    color = TextSecondary,
+                    // Opcional: podrías también aplicar lineThrough aquí si 'checked' es true
+                    // textDecoration = if (checked) TextDecoration.LineThrough else null
+                ),
                 maxLines = 1,
                 overflow = TextOverflow.Ellipsis
             )
@@ -385,7 +396,7 @@ fun TaskCheckboxItem(
                 Icon(
                     imageVector = Icons.Default.MoreVert,
                     contentDescription = "Opciones de tarea",
-                    tint = TextSecondary // O el color que prefieras
+                    tint = TextSecondary
                 )
             }
             DropdownMenu(
@@ -396,17 +407,16 @@ fun TaskCheckboxItem(
                     text = { Text("Eliminar") },
                     onClick = {
                         showMenu = false
-                        onDeleteRequest() // Llama a la lambda que mostrará el diálogo
+                        onDeleteRequest()
                     },
                     leadingIcon = {
                         Icon(
-                            Icons.Default.Delete,
+                            Icons.Filled.Delete,
                             contentDescription = "Eliminar tarea",
                             tint = MaterialTheme.colorScheme.error
                         )
                     }
                 )
-                // Aquí podrías añadir más DropdownMenuItem para "Editar", etc.
             }
         }
     }
