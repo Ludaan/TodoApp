@@ -1,31 +1,48 @@
 package com.example.todoapp.presentation.features.task.list
 
+import android.os.Build
+import android.widget.Toast
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.Build
+import androidx.compose.material.icons.filled.Delete
+import androidx.compose.material.icons.filled.MoreVert
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.CenterAlignedTopAppBar
 import androidx.compose.material3.Checkbox
 import androidx.compose.material3.CheckboxDefaults
+import androidx.compose.material3.DropdownMenu
+import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SnackbarHostState
-import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -40,15 +57,19 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
-import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavHostController
-import androidx.navigation.compose.rememberNavController
+import com.airbnb.lottie.compose.LottieAnimation
+import com.airbnb.lottie.compose.LottieCompositionSpec
+import com.airbnb.lottie.compose.LottieConstants
+import com.airbnb.lottie.compose.rememberLottieComposition
+import com.example.todoapp.core.util.DataState
 import com.example.todoapp.domain.model.Task
+import com.example.todoapp.presentation.features.task.list.viewmodel.TaskListUiState
 import com.example.todoapp.presentation.features.task.list.viewmodel.TaskViewModel
-import com.example.todoapp.presentation.navigation.AppNavGraph
 import com.example.todoapp.presentation.navigation.Screen
 import com.example.todoapp.ui.components.bottom_bar.BottomBar
 import com.example.todoapp.ui.components.bottom_bar.BottomTab
@@ -58,9 +79,6 @@ import com.example.todoapp.ui.theme.PrimaryBlue
 import com.example.todoapp.ui.theme.Slate50
 import com.example.todoapp.ui.theme.TextPrimary
 import com.example.todoapp.ui.theme.TextSecondary
-import com.example.todoapp.ui.theme.TodoAppTheme
-import java.time.Instant
-import java.time.LocalTime
 import java.time.format.DateTimeFormatter
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -76,12 +94,32 @@ fun TaskListScreen(
     val context = LocalContext.current
     val snackbarHostState = remember { SnackbarHostState() }
 
+    // Estado para el diálogo de confirmación de eliminación
+    var showDeleteConfirmationDialog by remember { mutableStateOf(false) }
+    var taskToDeleteId by remember { mutableStateOf<String?>(null) }
+
+    val syncingComposition by rememberLottieComposition(LottieCompositionSpec.Asset("syncing_lottie.json"))
+
     // Observar userMessage para mostrar Snackbars
     LaunchedEffect(uiState.userMessage) {
         uiState.userMessage?.let { message ->
             snackbarHostState.showSnackbar(message)
             viewModel.userMessageShown() // Limpiar el mensaje después de mostrarlo
         }
+    }
+
+    if (showDeleteConfirmationDialog && taskToDeleteId != null) {
+        DeleteConfirmationDialog(
+            onConfirm = {
+                taskToDeleteId?.let { viewModel.deleteTask(it) }
+                showDeleteConfirmationDialog = false
+                taskToDeleteId = null
+            },
+            onDismiss = {
+                showDeleteConfirmationDialog = false
+                taskToDeleteId = null
+            }
+        )
     }
 
     Scaffold(
@@ -103,7 +141,45 @@ fun TaskListScreen(
                 colors = TopAppBarDefaults.topAppBarColors(
                     containerColor = MaterialTheme.colorScheme.surface, // o primaryContainer
                     titleContentColor = MaterialTheme.colorScheme.onSurface // o onPrimaryContainer
-                )
+                ),
+                actions = {
+                    AnimatedVisibility(
+                        visible = uiState.syncStatus is DataState.Loading,
+                        enter = fadeIn(),
+                        exit = fadeOut()
+                    ) {
+                        LottieAnimation(
+                            composition = syncingComposition,
+                            iterations = LottieConstants.IterateForever,
+                            modifier = Modifier
+                                .size(48.dp) // Ajusta según necesites
+                                .padding(end = 8.dp)
+                        )
+                    }
+                    AnimatedVisibility(
+                        visible = uiState.syncStatus !is DataState.Loading,
+                        enter = fadeIn(),
+                        exit = fadeOut()
+                    ) {
+                        IconButton(onClick = {
+                            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                                viewModel.syncTasks()
+                            } else {
+                                Toast.makeText(
+                                    context,
+                                    "Sync requires Android Oreo or higher",
+                                    Toast.LENGTH_LONG
+                                ).show()
+                            }
+                        }) {
+                            Icon(
+                                imageVector = Icons.Filled.Build,
+                                contentDescription = "Sync Tasks",
+                                tint = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                        }
+                    }
+                }
                 // Aquí puedes añadir navigationIcon = { ... } o actions = { ... }
             )
         },
@@ -126,25 +202,126 @@ fun TaskListScreen(
 
         })
     { innerPadding ->
-        Column(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(innerPadding), horizontalAlignment = Alignment.CenterHorizontally
+        TaskListContent(
+            modifier = Modifier.padding(innerPadding),
+            uiState = uiState,
+            onToggleComplete = { task, isCompleted ->
+                Toast.makeText(context, "Toggle ${task.title} to $isCompleted", Toast.LENGTH_SHORT)
+                    .show()
+            },
+            onAttemptDeleteTask = { taskId -> // Cambiado para reflejar que es un intento
+                taskToDeleteId = taskId
+                showDeleteConfirmationDialog = true
+            }
+        )
+    }
+}
+
+@Composable
+fun TaskListContent(
+    modifier: Modifier = Modifier,
+    uiState: TaskListUiState,
+    onToggleComplete: (task: Task, isChecked: Boolean) -> Unit,
+    onAttemptDeleteTask: (taskId: String) -> Unit
+) {
+    val loadingTasksComposition by rememberLottieComposition(LottieCompositionSpec.Asset("loading_task_lottie.json"))
+    val emptyTasksComposition by rememberLottieComposition(LottieCompositionSpec.Asset("empty_task_lottie.json"))
+
+    Box(
+        modifier = modifier.fillMaxSize(),
+        contentAlignment = Alignment.Center
+    ) {
+        AnimatedVisibility(
+            visible = uiState.isLoadingTasks && uiState.tasks.isEmpty(),
+            enter = fadeIn(),
+            exit = fadeOut()
         ) {
+            Column(
+                horizontalAlignment = Alignment.CenterHorizontally,
+                verticalArrangement = Arrangement.Center,
+                modifier = Modifier.fillMaxSize()
+            ) {
+                LottieAnimation(
+                    composition = loadingTasksComposition,
+                    iterations = LottieConstants.IterateForever,
+                    modifier = Modifier.size(200.dp)
+                )
+                Spacer(modifier = Modifier.height(16.dp))
+                Text(
+                    "Loading your tasks...",
+                    style = MaterialTheme.typography.bodyLarge,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+            }
+        }
 
+        AnimatedVisibility(
+            visible = uiState.tasks.isEmpty() && !uiState.isLoadingTasks,
+            enter = fadeIn(),
+            exit = fadeOut()
+        ) {
+            Column(
+                horizontalAlignment = Alignment.CenterHorizontally,
+                verticalArrangement = Arrangement.Center,
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(horizontal = 32.dp)
+            ) {
+                LottieAnimation(
+                    composition = emptyTasksComposition,
+                    iterations = LottieConstants.IterateForever, // o 1 si es una animación más estática
+                    modifier = Modifier.size(250.dp)
+                )
+                Spacer(modifier = Modifier.height(16.dp))
+                Text(
+                    "No tasks yet!\nTap '+' to add a new one.",
+                    style = MaterialTheme.typography.headlineSmall,
+                    textAlign = TextAlign.Center,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+            }
+        }
 
+        AnimatedVisibility(
+            // Mostrar la lista solo si hay tareas y no estamos en la fase de carga inicial (donde tasks estaría vacío)
+            visible = uiState.tasks.isNotEmpty(), // isLoadingTasks ya no es necesario aquí si confiamos en que tasks se actualiza
+            enter = fadeIn(),
+            exit = fadeOut()
+        ) {
+            LazyColumn(
+                modifier = Modifier.fillMaxSize(),
+                contentPadding = PaddingValues(all = 16.dp),
+                verticalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
+                items(
+                    items = uiState.tasks,
+                    key = { task -> task.id }
+                ) { task ->
+                    // Asegúrate de que este Composable esté disponible y correctamente importado
+                    TaskCheckboxItem( // El que estaba en tu código original
+                        task = task,
+                        checked = task.isCompleted,
+                        onCheckedChange = { isChecked -> onToggleComplete(task, isChecked) },
+                        onDeleteRequest = { onAttemptDeleteTask(task.id) }
+                    )
+                }
+            }
         }
     }
 }
+
 
 @Composable
 fun TaskCheckboxItem(
     task: Task,
     checked: Boolean,
-    onCheckedChange: (Boolean) -> Unit
+    onCheckedChange: (Boolean) -> Unit,
+    onDeleteRequest: () -> Unit
 ) {
-    val backgroundColor = if (task.color != 0) Color(task.color) else MaterialTheme.colorScheme.surfaceVariant
+    val backgroundColor =
+        if (task.color != 0) Color(task.color) else MaterialTheme.colorScheme.surfaceVariant
     val cornerRadius = 8.dp
+    var showMenu by remember { mutableStateOf(false) }
 
     Row(
         modifier = Modifier
@@ -155,7 +332,8 @@ fun TaskCheckboxItem(
                 role = Role.Checkbox
             )
             .background(color = backgroundColor)
-            .padding(horizontal = 16.dp), verticalAlignment = Alignment.CenterVertically
+            .padding(start = 16.dp, end = 8.dp, top = 8.dp, bottom = 8.dp),
+        verticalAlignment = Alignment.CenterVertically
     ) {
 
         Checkbox(
@@ -168,12 +346,16 @@ fun TaskCheckboxItem(
             )
         )
 
-         Box(
-             modifier = Modifier
-                 .size(16.dp)
-                 .clip(CircleShape)
-                 .background(Color(task.color))
-         )
+        Spacer(modifier = Modifier.width(8.dp)) // Espacio entre checkbox y el color dot
+
+        Box(
+            modifier = Modifier
+                .size(16.dp)
+                .clip(CircleShape)
+                .background(Color(task.color))
+        )
+
+        Spacer(modifier = Modifier.width(12.dp)) // Espacio entre color dot y texto
 
         Column(modifier = Modifier.weight(1f)) {
             Text(
@@ -183,11 +365,12 @@ fun TaskCheckboxItem(
                 overflow = TextOverflow.Ellipsis
             )
             // Mostrar la descripción si existe y no es muy larga, o la hora de repetición
-            val secondaryText = if (task.description.isNotBlank() && task.description.length < 50) { // Límite arbitrario
-                task.description
-            } else {
-                "Repetir a las: ${task.repeatAt.format(DateTimeFormatter.ofPattern("HH:mm"))}"
-            }
+            val secondaryText =
+                if (task.description.isNotBlank() && task.description.length < 50) { // Límite arbitrario
+                    task.description
+                } else {
+                    "Repetir a las: ${task.repeatAt.format(DateTimeFormatter.ofPattern("HH:mm"))}"
+                }
 
             Text(
                 text = secondaryText,
@@ -196,83 +379,57 @@ fun TaskCheckboxItem(
                 overflow = TextOverflow.Ellipsis
             )
         }
+
+        Box {
+            IconButton(onClick = { showMenu = true }) {
+                Icon(
+                    imageVector = Icons.Default.MoreVert,
+                    contentDescription = "Opciones de tarea",
+                    tint = TextSecondary // O el color que prefieras
+                )
+            }
+            DropdownMenu(
+                expanded = showMenu,
+                onDismissRequest = { showMenu = false }
+            ) {
+                DropdownMenuItem(
+                    text = { Text("Eliminar") },
+                    onClick = {
+                        showMenu = false
+                        onDeleteRequest() // Llama a la lambda que mostrará el diálogo
+                    },
+                    leadingIcon = {
+                        Icon(
+                            Icons.Default.Delete,
+                            contentDescription = "Eliminar tarea",
+                            tint = MaterialTheme.colorScheme.error
+                        )
+                    }
+                )
+                // Aquí podrías añadir más DropdownMenuItem para "Editar", etc.
+            }
+        }
     }
 }
 
-// --- Previews ---
-
-@Preview(showBackground = true, name = "Task Item - Unchecked")
 @Composable
-fun TaskCheckboxItemUncheckedPreview() {
-    // Puedes envolverlo en tu tema si es necesario para que los colores MaterialTheme funcionen
-    // YourAppTheme {
-    Surface { // Surface para que showBackground funcione mejor con el color de fondo del item
-        TaskCheckboxItem(
-            task = Task(
-                id = "1",
-                title = "Comprar leche y pan para la cena de esta noche",
-                description = "Recordar que sea deslactosada",
-                isCompleted = false,
-                createdAt = Instant.now(),
-                color = 0xFFE1BEE7.toInt(), // Lila claro (ejemplo de color ARGB Int)
-                limitDate = Instant.now().plusSeconds(3600 * 24),
-                type = 1,
-                repeatAt = LocalTime.of(9, 0),
-                repeatDaily = true
-            ),
-            checked = false,
-            onCheckedChange = {}
-        )
-    }
-    // }
-}
-
-@Preview(showBackground = true, name = "Task Item - Checked")
-@Composable
-fun TaskCheckboxItemCheckedPreview() {
-    // YourAppTheme {
-    Surface(color = MaterialTheme.colorScheme.background) { // Fondo para ver el contraste del redondeado
-        TaskCheckboxItem(
-            task = Task(
-                id = "2",
-                title = "Terminar el informe del proyecto",
-                description = "Incluir gráficos y conclusiones",
-                isCompleted = true,
-                createdAt = Instant.now(),
-                color = android.graphics.Color.argb(255, 178, 223, 219), // Verde azulado claro
-                limitDate = Instant.now().plusSeconds(3600 * 2),
-                type = 0,
-                repeatAt = LocalTime.of(15, 30),
-                repeatDaily = false
-            ),
-            checked = true,
-            onCheckedChange = {}
-        )
-    }
-    // }
-}
-
-@Preview(showBackground = true, name = "Task Item - Sin Color Específico")
-@Composable
-fun TaskCheckboxItemDefaultColorPreview() {
-    // YourAppTheme {
-    Surface {
-        TaskCheckboxItem(
-            task = Task(
-                id = "3",
-                title = "Llamar al dentista",
-                description = "", // Descripción vacía
-                isCompleted = false,
-                createdAt = Instant.now(),
-                color = 0, // Sin color específico o color por defecto
-                limitDate = Instant.now().plusSeconds(3600 * 5),
-                type = 2,
-                repeatAt = LocalTime.of(11, 0),
-                repeatDaily = false
-            ),
-            checked = false,
-            onCheckedChange = {}
-        )
-    }
-    // }
+fun DeleteConfirmationDialog(
+    onConfirm: () -> Unit,
+    onDismiss: () -> Unit
+) {
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text("Confirmar Eliminación") },
+        text = { Text("¿Estás seguro de que quieres eliminar esta tarea?") },
+        confirmButton = {
+            TextButton(onClick = onConfirm) {
+                Text("Eliminar", color = MaterialTheme.colorScheme.error)
+            }
+        },
+        dismissButton = {
+            TextButton(onClick = onDismiss) {
+                Text("Cancelar")
+            }
+        }
+    )
 }
