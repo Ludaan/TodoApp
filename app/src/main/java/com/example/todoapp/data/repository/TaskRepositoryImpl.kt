@@ -63,4 +63,12 @@ class TaskRepositoryImpl @Inject constructor(
     override suspend fun deleteRemoteTask(id: String) {
         firebaseApi.deleteTask(id)
     }
+
+    override suspend fun updateLocalTaskCompletionStatus(taskId: String, isCompleted: Boolean) {
+        taskDao.updateTaskCompletionStatus(taskId, isCompleted)
+    }
+
+    override suspend fun updateRemoteTaskCompletionStatus(taskId: String, isCompleted: Boolean) {
+        firebaseApi.updateTaskCompletionStatus(taskId, isCompleted)
+    }
 }

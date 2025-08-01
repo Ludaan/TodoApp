@@ -9,6 +9,7 @@ import com.example.todoapp.domain.model.Task
 import com.example.todoapp.domain.use_case.task.DeleteTaskUseCase
 import com.example.todoapp.domain.use_case.task.GetTaskUseCase
 import com.example.todoapp.domain.use_case.sync.SyncTasksUseCase
+import com.example.todoapp.domain.use_case.task.UpdateTaskCompletionStatusUseCase
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
@@ -18,35 +19,33 @@ import javax.inject.Inject
 class TaskViewModel @Inject constructor(
     getTasksUseCase: GetTaskUseCase,
     private val deleteTaskUseCase: DeleteTaskUseCase,
-    private val syncTasksUseCase: SyncTasksUseCase
+    private val syncTasksUseCase: SyncTasksUseCase,
+    private val updateTaskCompletionStatusUseCase: UpdateTaskCompletionStatusUseCase
 ) : ViewModel() {
 
     private val _userMessage = MutableStateFlow<String?>(null)
     private val _syncState = MutableStateFlow<DataState<Unit>>(DataState.Idle)
     private val _isLoadingTasks = MutableStateFlow(true)
 
-    // Combina los diferentes flujos de datos en un solo UiState
     val uiState: StateFlow<TaskListUiState> = combine(
-        getTasksUseCase() // Este es el StateFlow<List<Task>> que ya tenías
-            .onStart { _isLoadingTasks.value = true } // Aunque getTasksUseCase es un StateFlow,
-            // podrías querer resetear isLoadingTasks
-            // si el flujo se reinicia por alguna razón.
-            // O simplemente manejar la carga inicial una vez.
-            .map { tasks -> _isLoadingTasks.value = false; tasks }, // Desactivar carga cuando llegan tareas
+        getTasksUseCase(),
         _isLoadingTasks,
         _syncState,
         _userMessage
     ) { tasks, isLoading, syncState, userMessage ->
+        if (tasks.isNotEmpty() && isLoading) {
+            _isLoadingTasks.value = false
+        }
         TaskListUiState(
             tasks = tasks,
-            isLoadingTasks = isLoading,
+            isLoadingTasks = if (tasks.isEmpty()) isLoading else false, // Muestra loading solo si no hay tareas
             syncStatus = syncState,
             userMessage = userMessage
         )
     }.stateIn(
         scope = viewModelScope,
         started = SharingStarted.WhileSubscribed(5_000),
-        initialValue = TaskListUiState(isLoadingTasks = true) // Estado inicial
+        initialValue = TaskListUiState(isLoadingTasks = true)
     )
 
     fun deleteTask(taskId: String) {
@@ -59,6 +58,18 @@ class TaskViewModel @Inject constructor(
             } catch (e: Exception) {
                 // Manejar el error, por ejemplo, mostrando un mensaje
                 _userMessage.value = "Error al eliminar la tarea: ${e.message}"
+            }
+        }
+    }
+
+    fun toggleTaskCompletion(taskToToggle: Task) {
+        val newStatus = !taskToToggle.isCompleted
+
+        viewModelScope.launch {
+            try {
+                updateTaskCompletionStatusUseCase(taskToToggle.id, newStatus)
+            } catch (e: Exception) {
+                _userMessage.value = "Error al actualizar la tarea: ${e.message}"
             }
         }
     }

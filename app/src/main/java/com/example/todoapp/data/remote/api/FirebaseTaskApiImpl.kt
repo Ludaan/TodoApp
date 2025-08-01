@@ -33,4 +33,8 @@ class FirebaseTaskApiImpl @Inject constructor(private val firestore: FirebaseFir
     override suspend fun deleteTask(id: String) {
         tasksCollection.document(id).delete().await()
     }
+
+    override  suspend fun updateTaskCompletionStatus(id: String, isCompleted: Boolean) {
+        tasksCollection.document(id).update("isCompleted", isCompleted).await()
+    }
 }
