@@ -6,8 +6,8 @@ import com.example.todoapp.core.common.DispatchersProvider
 import com.example.todoapp.core.common.StandardDispatchers
 import com.example.todoapp.data.local.AppDatabase
 import com.example.todoapp.data.local.dao.TaskDao
-import com.example.todoapp.data.remote.api.FirebaseTaskApi
-import com.example.todoapp.data.remote.api.FirebaseTaskApiImpl
+import com.example.todoapp.data.remote.task.FirebaseTaskApi
+import com.example.todoapp.data.remote.task.FirebaseTaskApiImpl
 import com.example.todoapp.domain.logic.sync.ConflictResolver
 import com.example.todoapp.domain.logic.sync.SyncManager
 import com.example.todoapp.domain.repository.TaskRepository
