@@ -1,11 +1,12 @@
 package com.example.todoapp.data.remote.auth
 
+import android.provider.ContactsContract.Data
 import com.example.todoapp.core.util.DataState
 import com.example.todoapp.data.remote.model.RegisterRequestDto
 import com.google.firebase.auth.FirebaseUser
 
 interface FirebaseAuthApi {
-    suspend fun registerUser(requestDto: RegisterRequestDto)
+    suspend fun registerUser(requestDto: RegisterRequestDto) : DataState<FirebaseUser>
     suspend fun updateUserProfile(displayName: String?, photoUrl: String? = null): DataState<Unit>
     suspend fun signInWithEmailAndPassword(email: String, password: String): DataState<FirebaseUser>
     suspend fun sendPasswordResetEmail(email: String): DataState<Unit>
