@@ -5,7 +5,7 @@ import com.example.todoapp.core.util.DataState // Tu clase DataState
 import com.example.todoapp.data.local.dao.TaskDao
 import com.example.todoapp.data.local.entities.TaskEntity
 import com.example.todoapp.data.mapper.TaskMapper // Tu mapper
-import com.example.todoapp.data.remote.api.FirebaseTaskApi
+import com.example.todoapp.data.remote.task.FirebaseTaskApi
 import com.example.todoapp.data.remote.model.RemoteTaskDto // Tu DTO remoto
 import com.example.todoapp.domain.model.Task // Tu modelo de dominio
 import com.google.firebase.Timestamp

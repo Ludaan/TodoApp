@@ -1,4 +1,4 @@
-package com.example.todoapp.data.di
+package com.example.todoapp.di
 
 import android.content.Context
 import androidx.room.Room
@@ -6,15 +6,10 @@ import com.example.todoapp.core.common.DispatchersProvider
 import com.example.todoapp.core.common.StandardDispatchers
 import com.example.todoapp.data.local.AppDatabase
 import com.example.todoapp.data.local.dao.TaskDao
-import com.example.todoapp.data.remote.api.FirebaseTaskApi
-import com.example.todoapp.data.remote.api.FirebaseTaskApiImpl
 import com.example.todoapp.domain.logic.sync.ConflictResolver
 import com.example.todoapp.domain.logic.sync.SyncManager
 import com.example.todoapp.domain.repository.TaskRepository
 import com.example.todoapp.data.repository.TaskRepositoryImpl
-import com.google.firebase.Firebase
-import com.google.firebase.firestore.FirebaseFirestore
-import com.google.firebase.firestore.firestore
 import dagger.Binds
 import dagger.Module
 import dagger.Provides
@@ -23,7 +18,6 @@ import dagger.hilt.android.qualifiers.ApplicationContext
 import dagger.hilt.components.SingletonComponent
 import javax.inject.Singleton
 
-// AppModule.kt
 @Module
 @InstallIn(SingletonComponent::class)
 abstract class AppModule {
@@ -35,9 +29,11 @@ abstract class AppModule {
     @Binds
     @Singleton
     abstract fun bindTaskRepository(repository: TaskRepositoryImpl): TaskRepository
+    // NOTA: TaskRepositoryImpl ahora obtendrá FirebaseTaskApi de FirebaseModule
+    // y TaskDao de AppProvidesModule a través de la inyección de Hilt.
 }
 
-// AppProvidesModule.kt
+// AppProvidesModule.kt (Objeto para @Provides)
 @Module
 @InstallIn(SingletonComponent::class)
 object AppProvidesModule {
@@ -46,19 +42,12 @@ object AppProvidesModule {
     @Singleton
     fun provideAppDatabase(@ApplicationContext context: Context): AppDatabase =
         Room.databaseBuilder(context, AppDatabase::class.java, "tasks_db")
-            .fallbackToDestructiveMigration(false)
+            .fallbackToDestructiveMigration(false) // Considera una estrategia de migración adecuada para producción
             .build()
 
     @Provides
     fun provideTaskDao(db: AppDatabase): TaskDao = db.taskDao()
 
-    @Provides
-    @Singleton
-    fun provideFireStore(): FirebaseFirestore = Firebase.firestore
-
-    @Provides
-    fun provideFirebaseTaskApi(firestore: FirebaseFirestore): FirebaseTaskApi =
-        FirebaseTaskApiImpl(firestore)
 
     @Provides
     @Singleton
@@ -72,4 +61,3 @@ object AppProvidesModule {
         dispatchers: DispatchersProvider
     ): SyncManager = SyncManager(repository, conflictResolver, dispatchers.io)
 }
-

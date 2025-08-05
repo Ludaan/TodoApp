@@ -1,4 +1,4 @@
-package com.example.todoapp.data.remote.api
+package com.example.todoapp.data.remote.task
 
 import com.example.todoapp.core.util.DataState
 import com.example.todoapp.data.remote.model.RemoteTaskDto
