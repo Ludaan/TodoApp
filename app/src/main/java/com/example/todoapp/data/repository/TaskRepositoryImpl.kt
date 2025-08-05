@@ -6,7 +6,7 @@ import androidx.annotation.RequiresApi
 import com.example.todoapp.core.util.DataState
 import com.example.todoapp.data.local.dao.TaskDao
 import com.example.todoapp.data.mapper.TaskMapper
-import com.example.todoapp.data.remote.task.FirebaseTaskApi
+import com.example.todoapp.domain.repository.FirebaseTaskApi
 import com.example.todoapp.domain.model.Task
 import com.example.todoapp.domain.repository.TaskRepository
 import kotlinx.coroutines.flow.Flow

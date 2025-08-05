@@ -2,6 +2,7 @@ package com.example.todoapp.data.remote.task
 
 import com.example.todoapp.core.util.DataState
 import com.example.todoapp.data.remote.model.RemoteTaskDto
+import com.example.todoapp.domain.repository.FirebaseTaskApi
 import com.google.firebase.firestore.FirebaseFirestore
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.Flow
@@ -10,7 +11,8 @@ import kotlinx.coroutines.flow.flowOn
 import kotlinx.coroutines.tasks.await
 import javax.inject.Inject
 
-class FirebaseTaskApiImpl @Inject constructor(private val firestore: FirebaseFirestore) : FirebaseTaskApi {
+class FirebaseTaskApiImpl @Inject constructor(private val firestore: FirebaseFirestore) :
+    FirebaseTaskApi {
 
     private val tasksCollection = firestore.collection("tasks")
 

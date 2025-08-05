@@ -1,8 +1,8 @@
 package com.example.todoapp.di
 
-import com.example.todoapp.data.remote.auth.FirebaseAuthApi
+import com.example.todoapp.domain.repository.FirebaseAuthApi
 import com.example.todoapp.data.remote.auth.FirebaseAuthApiImpl
-import com.example.todoapp.data.remote.task.FirebaseTaskApi
+import com.example.todoapp.domain.repository.FirebaseTaskApi
 import com.example.todoapp.data.remote.task.FirebaseTaskApiImpl
 import com.google.firebase.Firebase
 import com.google.firebase.auth.FirebaseAuth
