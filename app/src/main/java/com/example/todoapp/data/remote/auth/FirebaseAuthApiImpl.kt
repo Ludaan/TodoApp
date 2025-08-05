@@ -7,6 +7,7 @@ import com.google.firebase.auth.FirebaseUser
 import com.google.firebase.auth.UserProfileChangeRequest
 import kotlinx.coroutines.tasks.await
 import androidx.core.net.toUri
+import com.example.todoapp.domain.repository.FirebaseAuthApi
 
 class FirebaseAuthApiImpl(
     private val firebaseAuth: FirebaseAuth

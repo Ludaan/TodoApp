@@ -1,6 +1,5 @@
-package com.example.todoapp.data.remote.auth
+package com.example.todoapp.domain.repository
 
-import android.provider.ContactsContract.Data
 import com.example.todoapp.core.util.DataState
 import com.example.todoapp.data.remote.model.RegisterRequestDto
 import com.google.firebase.auth.FirebaseUser
