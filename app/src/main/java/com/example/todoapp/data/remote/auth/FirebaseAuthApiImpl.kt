@@ -7,18 +7,40 @@ import com.google.firebase.auth.FirebaseUser
 import com.google.firebase.auth.UserProfileChangeRequest
 import kotlinx.coroutines.tasks.await
 import androidx.core.net.toUri
+import com.example.todoapp.data.mapper.toDomainUser
+import com.example.todoapp.domain.model.User
 import com.example.todoapp.domain.repository.FirebaseAuthApi
+import com.example.todoapp.domain.use_case.auth.params.RegisterUserParams
 
 class FirebaseAuthApiImpl(
     private val firebaseAuth: FirebaseAuth
 ) : FirebaseAuthApi {
-    override suspend fun registerUser(requestDto: RegisterRequestDto): DataState<FirebaseUser> {
+    override suspend fun registerUser(params: RegisterUserParams): DataState<User> {
         return try {
             val authResult = firebaseAuth.createUserWithEmailAndPassword(
-                requestDto.email,
-                requestDto.password
+                params.email,    // Usa params.email
+                params.password  // Usa params.password
             ).await()
-            DataState.Success(authResult.user!!)
+            val firebaseUser: FirebaseUser = authResult.user
+                ?: return DataState.Error("Firebase user creation failed, user is null.") // Obtener FirebaseUser de AuthResult
+
+            if (params.username.isNotBlank()) {
+                val profileUpdates = UserProfileChangeRequest.Builder()
+                    .setDisplayName(params.username) // Usa params.username
+                    .build()
+                firebaseUser.updateProfile(profileUpdates).await()
+            }
+            val domainUser = firebaseUser.toDomainUser()
+
+            if (domainUser != null) {
+                DataState.Success(domainUser)
+            } else {
+                // Esto podría ocurrir si el mapeo falla por alguna razón, o si firebaseUser fuera nulo
+                // aunque ya lo comprobamos.
+                DataState.Error("Failed to map Firebase user to domain user.")
+            }
+
+
         } catch (e: Exception) {
             DataState.Error(e.toString())
         }
@@ -49,10 +71,19 @@ class FirebaseAuthApiImpl(
     override suspend fun signInWithEmailAndPassword(
         email: String,
         password: String
-    ): DataState<FirebaseUser> {
+    ): DataState<User> {
         return try {
             val authResult = firebaseAuth.signInWithEmailAndPassword(email, password).await()
-            DataState.Success(authResult.user!!)
+            val firebaseUser = authResult.user
+                ?: return DataState.Error("Sign in failed, Firebase user is null.")
+
+            val domainUser = firebaseUser.toDomainUser()
+            if (domainUser != null) {
+                DataState.Success(domainUser)
+            } else {
+                DataState.Error("Failed to map Firebase user to domain user after sign in.")
+            }
+
         } catch (e: Exception) {
             DataState.Error(e.toString())
         }
@@ -75,6 +106,7 @@ class FirebaseAuthApiImpl(
             DataState.Error(e.toString())
         }    }
 
-    override fun getCurrentFirebaseUser(): FirebaseUser? {
-        return firebaseAuth.currentUser    }
+    override fun getCurrentFirebaseUser(): User? {
+        return firebaseAuth.currentUser.toDomainUser()
+    }
 }
