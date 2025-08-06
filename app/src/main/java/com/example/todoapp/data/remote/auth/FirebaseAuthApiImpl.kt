@@ -11,6 +11,9 @@ import com.example.todoapp.data.mapper.toDomainUser
 import com.example.todoapp.domain.model.User
 import com.example.todoapp.domain.repository.FirebaseAuthApi
 import com.example.todoapp.domain.use_case.auth.params.RegisterUserParams
+import com.google.firebase.auth.FirebaseAuthInvalidCredentialsException
+import com.google.firebase.auth.FirebaseAuthInvalidUserException
+import com.google.firebase.auth.FirebaseAuthUserCollisionException
 
 class FirebaseAuthApiImpl(
     private val firebaseAuth: FirebaseAuth
@@ -41,8 +44,13 @@ class FirebaseAuthApiImpl(
             }
 
 
-        } catch (e: Exception) {
-            DataState.Error(e.toString())
+        } catch (e: FirebaseAuthUserCollisionException) { // Email ya en uso
+            DataState.Error("Este correo electrónico ya está registrado. Intenta con otro.")
+        } catch (e: FirebaseAuthInvalidCredentialsException) { // Formato de email inválido, contraseña débil
+            DataState.Error("Credenciales inválidas. Asegúrate de que el correo sea válido y la contraseña sea segura.")
+        } catch (e: Exception) { // Captura genérica para otros errores
+            // Podrías loggear 'e' para depuración
+            DataState.Error("Ocurrió un error durante el registro: ${e.localizedMessage ?: "Error desconocido"}")
         }
     }
 
@@ -75,17 +83,21 @@ class FirebaseAuthApiImpl(
         return try {
             val authResult = firebaseAuth.signInWithEmailAndPassword(email, password).await()
             val firebaseUser = authResult.user
-                ?: return DataState.Error("Sign in failed, Firebase user is null.")
+                ?: return DataState.Error("Error al iniciar sesión, usuario de Firebase nulo.")
 
             val domainUser = firebaseUser.toDomainUser()
             if (domainUser != null) {
                 DataState.Success(domainUser)
             } else {
-                DataState.Error("Failed to map Firebase user to domain user after sign in.")
+                DataState.Error("Error al mapear el usuario de Firebase después del inicio de sesión.")
             }
-
-        } catch (e: Exception) {
-            DataState.Error(e.toString())
+        } catch (e: FirebaseAuthInvalidUserException) { // Usuario no encontrado
+            DataState.Error("No se encontró un usuario con este correo electrónico.")
+        } catch (e: FirebaseAuthInvalidCredentialsException) { // Contraseña incorrecta
+            DataState.Error("La contraseña es incorrecta.")
+        } catch (e: Exception) { // Captura genérica para otros errores
+            // Podrías loggear 'e' para depuración
+            DataState.Error("Ocurrió un error al iniciar sesión: ${e.localizedMessage ?: "Error desconocido"}")
         }
     }
 
