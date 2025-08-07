@@ -8,7 +8,7 @@ class GetCurrentUserUseCase @Inject constructor(
     private val authRepository : FirebaseAuthApi
 ) {
 
-    suspend operator fun invoke() : User? {
+     operator fun invoke() : User? {
         return authRepository.getCurrentFirebaseUser()
     }
 }
