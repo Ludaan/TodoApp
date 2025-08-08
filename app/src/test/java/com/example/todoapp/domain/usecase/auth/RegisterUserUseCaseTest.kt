@@ -60,4 +60,19 @@ class RegisterUserUseCaseTest {
         assertEquals(mockDomainUser, (result as DataState.Success).data)
 
     }
+
+    @Test
+    fun `invoke cuando el repositorio devuelve error deberia devolver DataState Error`() = runTest {
+        // Arrange
+        val errorMessage = "Error en el registro desde el repositorio"
+        coEvery { mockRepository.registerUser(validUser) } returns DataState.Error(errorMessage)
+
+        // Act
+        val result = registerUserUseCase(validUser)
+
+        // Assert
+        coVerify(exactly = 1) { mockRepository.registerUser(validUser) }
+        assertTrue("El resultado debería ser DataState.Error", result is DataState.Error)
+        assertEquals(errorMessage, (result as DataState.Error).message)
+    }
 }
