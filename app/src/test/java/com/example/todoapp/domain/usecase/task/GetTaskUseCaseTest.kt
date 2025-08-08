@@ -1,10 +1,9 @@
-package com.example.todoapp.domain.usecase
+package com.example.todoapp.domain.usecase.task
 
 import app.cash.turbine.test
 import com.example.todoapp.domain.model.Task
 import com.example.todoapp.domain.repository.TaskRepository
 import com.example.todoapp.domain.use_case.task.GetTaskUseCase
-import io.mockk.coVerify // Para verificar funciones suspend o que devuelven Flow con coEvery
 import io.mockk.every
 import io.mockk.impl.annotations.RelaxedMockK // O @MockK si prefieres ser más explícito
 import io.mockk.junit4.MockKRule // Para inicializar mocks con @MockK o @RelaxedMockK

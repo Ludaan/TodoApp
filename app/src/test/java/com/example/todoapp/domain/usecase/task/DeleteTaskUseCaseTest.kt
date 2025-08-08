@@ -1,4 +1,4 @@
-package com.example.todoapp.domain.usecase
+package com.example.todoapp.domain.usecase.task
 
 import com.example.todoapp.domain.repository.TaskRepository
 import com.example.todoapp.domain.use_case.task.DeleteTaskUseCase
@@ -9,7 +9,6 @@ import io.mockk.junit4.MockKRule
 import io.mockk.just
 import io.mockk.runs
 import kotlinx.coroutines.test.runTest
-import org.junit.Assert
 import org.junit.Assert.assertEquals
 import org.junit.Assert.fail // Para forzar un fallo si no se lanza la excepción esperada
 import org.junit.Before
@@ -69,7 +68,7 @@ class DeleteTaskUseCaseTest {
         }
 
         // Assert
-        Assert.assertEquals("La excepción lanzada no es la esperada", expectedException, actualException)
+        assertEquals("La excepción lanzada no es la esperada", expectedException, actualException)
         // Verifica que deleteRemoteTask fue llamado
         coVerify(exactly = 1) { mockRepository.deleteRemoteTask(testTaskId) }
         // Verifica que deleteLocalTask NO fue llamado
@@ -95,7 +94,7 @@ class DeleteTaskUseCaseTest {
         }
 
         // Assert
-        Assert.assertEquals("La excepción lanzada no es la esperada", expectedException, actualException)
+        assertEquals("La excepción lanzada no es la esperada", expectedException, actualException)
         // Verifica que deleteRemoteTask fue llamado (debería haber tenido éxito)
         coVerify(exactly = 1) { mockRepository.deleteRemoteTask(testTaskId) }
         // Verifica que deleteLocalTask fue llamado (y lanzó la excepción)
