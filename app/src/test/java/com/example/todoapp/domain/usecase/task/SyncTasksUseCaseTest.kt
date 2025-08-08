@@ -1,4 +1,4 @@
-package com.example.todoapp.domain.usecase
+package com.example.todoapp.domain.usecase.task
 
 import io.mockk.every
 import io.mockk.impl.annotations.RelaxedMockK
