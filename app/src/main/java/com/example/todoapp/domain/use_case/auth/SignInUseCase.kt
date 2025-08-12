@@ -20,15 +20,15 @@ class SignInUseCase @Inject constructor(private val authRepository: FirebaseAuth
     suspend operator fun invoke(params: SignInParams): DataState<User> {
 
 
+        if (params.email.isBlank() && params.password.isBlank()) {
+            return DataState.Error(ERROR_EMAIL_AND_PASSWORD_EMPTY)
+        }
+
         if (params.email.isBlank()) {
             return DataState.Error(ERROR_EMAIL_EMPTY)
         }
         if (params.password.isBlank()) {
             return DataState.Error(ERROR_PASSWORD_EMPTY)
-        }
-
-        if (params.email.isBlank() || params.password.isBlank()) {
-            return DataState.Error(ERROR_EMAIL_AND_PASSWORD_EMPTY)
         }
 
         if (!Patterns.EMAIL_ADDRESS.matcher(params.email).matches()) {
