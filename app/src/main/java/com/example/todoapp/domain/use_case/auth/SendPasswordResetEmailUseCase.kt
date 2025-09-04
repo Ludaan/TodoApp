@@ -11,8 +11,8 @@ class SendPasswordResetEmailUseCase  @Inject constructor(
 ){
 
     companion object {
-        private const val ERROR_EMAIL_EMPTY = "El correo electrónico no puede estar vacío."
-        private const val ERROR_EMAIL_FORMAT = "El formato del correo electrónico no es válido."
+        const val ERROR_EMAIL_EMPTY = "El correo electrónico no puede estar vacío."
+        const val ERROR_EMAIL_FORMAT = "El formato del correo electrónico no es válido."
     }
 
     suspend operator fun invoke(email: String) : DataState<Unit> {
