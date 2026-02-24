@@ -2,10 +2,10 @@ package com.example.todoapp.data.mapper
 
 import android.os.Build
 import androidx.annotation.RequiresApi
-import com.example.todoapp.core.util.toInstant
 import com.example.todoapp.data.local.entities.TaskEntity
 import com.example.todoapp.data.remote.model.RemoteTaskDto
 import com.example.todoapp.domain.model.Task
+import com.example.todoapp.domain.model.TaskSyncStatus
 import com.google.firebase.Timestamp
 import java.time.Instant
 import java.time.LocalTime
@@ -21,12 +21,14 @@ object TaskMapper {
         title = dto.title,
         isCompleted = dto.isCompleted,
         createdAt = dto.createdAt.toInstant(),
+        updatedAt = dto.updatedAt.toInstant(),
         color = dto.color,
         limitDate = dto.limitDate.toInstant(),
         type = dto.type,
         repeatAt = LocalTime.parse(dto.repeatAt, timeFormatter),
         description = dto.description,
-        repeatDaily = dto.repeatDaily
+        repeatDaily = dto.repeatDaily,
+        syncStatus = dto.syncStatus.toTaskSyncStatus()
     )
 
     @RequiresApi(Build.VERSION_CODES.O)
@@ -35,12 +37,14 @@ object TaskMapper {
         title = task.title,
         isCompleted = task.isCompleted,
         createdAt = Timestamp(task.createdAt.epochSecond, task.createdAt.nano),
+        updatedAt = Timestamp(task.updatedAt.epochSecond, task.updatedAt.nano),
         color = task.color,
         limitDate = Timestamp(task.limitDate.epochSecond, task.limitDate.nano),
         type = task.type,
         repeatAt = task.repeatAt.format(timeFormatter),
         description = task.description,
-        repeatDaily = task.repeatDaily
+        repeatDaily = task.repeatDaily,
+        syncStatus = task.syncStatus.name
     )
 
     @RequiresApi(Build.VERSION_CODES.O)
@@ -49,12 +53,14 @@ object TaskMapper {
         title = entity.title,
         isCompleted = entity.isCompleted,
         createdAt = Instant.ofEpochMilli(entity.createdAt),
+        updatedAt = Instant.ofEpochMilli(entity.updatedAt),
         color = entity.color,
         limitDate = Instant.ofEpochMilli(entity.limitDate),
         type = entity.type,
         repeatAt = LocalTime.parse(entity.repeatAt, timeFormatter),
         description = entity.description,
-        repeatDaily = entity.repeatDaily
+        repeatDaily = entity.repeatDaily,
+        syncStatus = entity.syncStatus.toTaskSyncStatus()
     )
 
     @RequiresApi(Build.VERSION_CODES.O)
@@ -63,11 +69,16 @@ object TaskMapper {
         title = task.title,
         isCompleted = task.isCompleted,
         createdAt = task.createdAt.toEpochMilli(),
+        updatedAt = task.updatedAt.toEpochMilli(),
         color = task.color,
         limitDate = task.limitDate.toEpochMilli(),
         type = task.type,
         repeatAt = task.repeatAt.format(timeFormatter),
         description = task.description,
-        repeatDaily = task.repeatDaily
+        repeatDaily = task.repeatDaily,
+        syncStatus = task.syncStatus.name
     )
+
+    private fun String.toTaskSyncStatus(): TaskSyncStatus =
+        TaskSyncStatus.entries.firstOrNull { it.name == this } ?: TaskSyncStatus.SYNCED
 }

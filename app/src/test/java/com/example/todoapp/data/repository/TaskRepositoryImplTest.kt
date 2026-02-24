@@ -301,16 +301,16 @@ class TaskRepositoryImplTest {
     }
 
     @Test
-    fun `deleteLocalTask llama a DAO con id`() = runTest {
+    fun `deleteLocalTask marca PENDING_DELETE en DAO`() = runTest {
         // Arrange
         val taskId = "id_a_borrar"
-        coEvery { mockTaskDao.deleteTaskById(taskId) } just Runs
+        coEvery { mockTaskDao.updateTaskSyncStatus(taskId, "PENDING_DELETE", any()) } just Runs
 
         // Act
         repository.deleteLocalTask(taskId)
 
         // Assert
-        coVerify(exactly = 1) { mockTaskDao.deleteTaskById(taskId) }
+        coVerify(exactly = 1) { mockTaskDao.updateTaskSyncStatus(taskId, "PENDING_DELETE", any()) }
     }
 
     @Test

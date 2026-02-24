@@ -12,6 +12,7 @@ data class TaskEntity(
     val description: String,
     @ColumnInfo(name = "is_completed") val isCompleted: Boolean = false,
     @ColumnInfo(name = "created_at") val createdAt: Long = System.currentTimeMillis(),
+    @ColumnInfo(name = "updated_at") val updatedAt: Long = System.currentTimeMillis(),
     val color: Int,
     @ColumnInfo(name = "limit_date") val limitDate: Long,
     val type: Int,

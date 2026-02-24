@@ -41,10 +41,30 @@ class GetTaskUseCaseTest {
 
         // Arrange
         val fakeTasks = listOf(
-            Task("1", "Task 1", "Desc 1", false, Instant.now(), 0, Instant.now(), 0,
-                LocalTime.NOON, false),
-            Task("2", "Task 2", "Desc 2", true, Instant.now(), 1, Instant.now(), 1,
-                LocalTime.now(), true)
+            Task(
+                id = "1",
+                title = "Task 1",
+                description = "Desc 1",
+                isCompleted = false,
+                createdAt = Instant.now(),
+                color = 0,
+                limitDate = Instant.now(),
+                type = 0,
+                repeatAt = LocalTime.NOON,
+                repeatDaily = false
+            ),
+            Task(
+                id = "2",
+                title = "Task 2",
+                description = "Desc 2",
+                isCompleted = true,
+                createdAt = Instant.now(),
+                color = 1,
+                limitDate = Instant.now(),
+                type = 1,
+                repeatAt = LocalTime.now(),
+                repeatDaily = true
+            )
         )
 
         // Usamos 'every' porque getLocalTasks() no es suspend. Si lo fuera, usaríamos 'coEvery'.

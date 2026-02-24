@@ -6,6 +6,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.todoapp.core.util.DataState
 import com.example.todoapp.domain.model.Task
+import com.example.todoapp.domain.model.TaskWriteResult
 import com.example.todoapp.domain.use_case.task.DeleteTaskUseCase
 import com.example.todoapp.domain.use_case.task.GetTaskUseCase
 import com.example.todoapp.domain.use_case.sync.SyncTasksUseCase
@@ -51,12 +52,13 @@ class TaskViewModel @Inject constructor(
     fun deleteTask(taskId: String) {
         viewModelScope.launch {
             try {
-                // Suponiendo que deleteTaskUseCase podría lanzar una excepción o devolver un resultado
-                deleteTaskUseCase(taskId)
-                // Opcional: Mostrar un mensaje de éxito
-                // _userMessage.value = "Tarea eliminada correctamente"
+                when (deleteTaskUseCase(taskId)) {
+                    TaskWriteResult.Synced -> Unit
+                    is TaskWriteResult.PendingSync -> {
+                        _userMessage.value = "Eliminada localmente. Se sincronizará cuando haya conexión."
+                    }
+                }
             } catch (e: Exception) {
-                // Manejar el error, por ejemplo, mostrando un mensaje
                 _userMessage.value = "Error al eliminar la tarea: ${e.message}"
             }
         }
@@ -67,7 +69,12 @@ class TaskViewModel @Inject constructor(
 
         viewModelScope.launch {
             try {
-                updateTaskCompletionStatusUseCase(taskToToggle.id, newStatus)
+                when (updateTaskCompletionStatusUseCase(taskToToggle.id, newStatus)) {
+                    TaskWriteResult.Synced -> Unit
+                    is TaskWriteResult.PendingSync -> {
+                        _userMessage.value = "Cambio guardado localmente. Se sincronizará después."
+                    }
+                }
             } catch (e: Exception) {
                 _userMessage.value = "Error al actualizar la tarea: ${e.message}"
             }

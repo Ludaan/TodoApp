@@ -9,6 +9,7 @@ import com.example.todoapp.domain.use_case.auth.SendPasswordResetEmailUseCase
 import com.example.todoapp.domain.use_case.auth.SignInUseCase
 import com.example.todoapp.domain.use_case.auth.params.RegisterUserParams
 import com.example.todoapp.domain.use_case.auth.params.SignInParams
+import com.example.todoapp.domain.use_case.task.ClearLocalTasksUseCase
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -21,7 +22,8 @@ import javax.inject.Inject
 class LoginViewModel @Inject constructor(
     private val signInUseCase: SignInUseCase,
     private val registerUserUseCase: RegisterUserUseCase,
-    private val sendPasswordResetEmailUseCase: SendPasswordResetEmailUseCase
+    private val sendPasswordResetEmailUseCase: SendPasswordResetEmailUseCase,
+    private val clearLocalTasksUseCase: ClearLocalTasksUseCase
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(LoginUiState())
@@ -74,6 +76,9 @@ class LoginViewModel @Inject constructor(
                     password = _uiState.value.passwordInput
                 )
             )
+            if (result is DataState.Success) {
+                clearLocalTasksUseCase()
+            }
             _uiState.update {
                 it.copy(
                     isLoading = false,
@@ -94,6 +99,9 @@ class LoginViewModel @Inject constructor(
                     username = _uiState.value.usernameInput.trim()
                 )
             )
+            if (result is DataState.Success) {
+                clearLocalTasksUseCase()
+            }
             _uiState.update {
                 it.copy(
                     isLoading = false,

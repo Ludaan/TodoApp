@@ -42,7 +42,7 @@ object AppProvidesModule {
     @Singleton
     fun provideAppDatabase(@ApplicationContext context: Context): AppDatabase =
         Room.databaseBuilder(context, AppDatabase::class.java, "tasks_db")
-            .fallbackToDestructiveMigration(false) // Considera una estrategia de migración adecuada para producción
+            .addMigrations(AppDatabase.MIGRATION_1_2)
             .build()
 
     @Provides

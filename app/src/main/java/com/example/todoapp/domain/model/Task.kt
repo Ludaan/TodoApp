@@ -9,9 +9,11 @@ data class Task(
     val description : String,
     val isCompleted: Boolean,
     val createdAt: Instant,
+    val updatedAt: Instant = createdAt,
     val color: Int,
     val limitDate: Instant,
     val type: Int,
     val repeatAt : LocalTime,
-    val repeatDaily : Boolean
+    val repeatDaily : Boolean,
+    val syncStatus: TaskSyncStatus = TaskSyncStatus.SYNCED
 )

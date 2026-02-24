@@ -7,6 +7,7 @@ import com.example.todoapp.domain.use_case.auth.GetCurrentUserUseCase
 import com.example.todoapp.domain.use_case.auth.SignOutUseCase
 import com.example.todoapp.domain.use_case.auth.UpdateUserProfileUseCase
 import com.example.todoapp.domain.use_case.auth.params.UpdateUserProfileParams
+import com.example.todoapp.domain.use_case.task.ClearLocalTasksUseCase
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -19,7 +20,8 @@ import javax.inject.Inject
 class ProfileViewModel @Inject constructor(
     private val getCurrentUserUseCase: GetCurrentUserUseCase,
     private val updateUserProfileUseCase: UpdateUserProfileUseCase,
-    private val signOutUseCase: SignOutUseCase
+    private val signOutUseCase: SignOutUseCase,
+    private val clearLocalTasksUseCase: ClearLocalTasksUseCase
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(ProfileUiState())
@@ -79,6 +81,9 @@ class ProfileViewModel @Inject constructor(
         viewModelScope.launch {
             _uiState.update { it.copy(isLoading = true) }
             val result = signOutUseCase()
+            if (result is DataState.Success) {
+                clearLocalTasksUseCase()
+            }
             _uiState.update {
                 it.copy(
                     isLoading = false,
