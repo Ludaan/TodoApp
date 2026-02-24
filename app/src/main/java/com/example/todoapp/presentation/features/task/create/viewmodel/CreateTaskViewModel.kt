@@ -5,6 +5,8 @@ import androidx.compose.ui.graphics.toArgb
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.todoapp.domain.model.Task
+import com.example.todoapp.domain.model.TaskSyncStatus
+import com.example.todoapp.domain.model.TaskWriteResult
 import com.example.todoapp.domain.use_case.task.AddTaskUseCase
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -103,28 +105,43 @@ class CreateTaskViewModel @Inject constructor(
         _uiState.update { it.copy(isSaving = true, errorMessage = null, saveSuccess = false) }
 
         // Construir el objeto Task a partir del UiState
+        val now = Instant.now()
         val taskToSave = Task(
             id = UUID.randomUUID().toString(), // Generar un nuevo ID único para la tarea
             title = currentState.title,
             description = currentState.description,
             isCompleted = false, // Las nuevas tareas generalmente no están completadas
-            createdAt = Instant.now(), // Fecha y hora actual de creación
+            createdAt = now, // Fecha y hora actual de creación
+            updatedAt = now,
             color = currentState.selectedColor.toArgb(), // Convierte Compose Color a Int ARGB
             limitDate = if (currentState.endRepeatOption != "Never" && currentState.repeatDaily) { // Solo si hay una fecha de finalización y se repite
                 currentState.endRepeatDate
             } else {
-                Instant.now()
+                now
 
             },
             type = 0, // Asumiendo un valor por defecto o que lo obtienes de otra parte del UiState
             repeatAt = currentState.repeatTime, // Directamente desde el UiState
-            repeatDaily = currentState.repeatDaily // Directamente desde el UiState
+            repeatDaily = currentState.repeatDaily, // Directamente desde el UiState
+            syncStatus = TaskSyncStatus.PENDING
         )
 
         viewModelScope.launch {
             try {
-                addTaskUseCase(taskToSave) // Llama al caso de uso inyectado
-                _uiState.update { it.copy(isSaving = false, saveSuccess = true) }
+                when (addTaskUseCase(taskToSave)) {
+                    TaskWriteResult.Synced -> {
+                        _uiState.update { it.copy(isSaving = false, saveSuccess = true) }
+                    }
+                    is TaskWriteResult.PendingSync -> {
+                        _uiState.update {
+                            it.copy(
+                                isSaving = false,
+                                saveSuccess = true,
+                                errorMessage = "Guardada localmente. Se sincronizará después."
+                            )
+                        }
+                    }
+                }
             } catch (e: Exception) {
                 // Manejar errores (ej. mostrar un Snackbar, loguear el error)
                 _uiState.update { it.copy(isSaving = false, errorMessage = "Error al guardar la tarea: ${e.message}") }

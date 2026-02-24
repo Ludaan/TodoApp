@@ -10,12 +10,12 @@ plugins {
 
 android {
     namespace = "com.example.todoapp"
-    compileSdk = 35
+    compileSdk = 36
 
     defaultConfig {
         applicationId = "com.example.todoapp"
         minSdk = 24
-        targetSdk = 35
+        targetSdk = 36
         versionCode = 1
         versionName = "1.0"
 
@@ -62,18 +62,12 @@ dependencies {
 
     // Hilt (DI)
     implementation(libs.hilt.android)
-    implementation(libs.androidx.room.common.jvm)
     kapt(libs.hilt.android.compiler)
     implementation(libs.hilt.navigation.compose)
 
     // Corrutinas
     implementation(libs.kotlinx.coroutines.core)
     implementation(libs.kotlinx.coroutines.android)
-
-    // Networking
-    implementation(libs.retrofit)
-    implementation(libs.retrofit.converter.moshi)
-    implementation(libs.moshi.kotlin)
 
     // Imágenes
     implementation(libs.coil.compose)
@@ -90,7 +84,6 @@ dependencies {
 
     // Utilidades
     implementation(libs.timber)
-    implementation(libs.work.runtime.ktx)
     implementation(libs.accompanist.permissions)
     implementation(libs.lottie.compose)
 

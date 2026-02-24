@@ -3,6 +3,7 @@ package com.example.todoapp.domain.logic.sync
 import android.os.Build
 import androidx.annotation.RequiresApi
 import com.example.todoapp.domain.model.Task
+import com.example.todoapp.domain.model.TaskSyncStatus
 
 class ConflictResolver {
 
@@ -24,7 +25,9 @@ class ConflictResolver {
             merged[id] = when {
                 localTask == null -> remoteTask!!
                 remoteTask == null -> localTask
-                localTask.createdAt > remoteTask.createdAt -> localTask
+                localTask.updatedAt > remoteTask.updatedAt -> localTask
+                remoteTask.updatedAt > localTask.updatedAt -> remoteTask
+                localTask.syncStatus == TaskSyncStatus.PENDING_DELETE -> localTask
                 else -> remoteTask
             }
         }

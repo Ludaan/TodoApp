@@ -4,6 +4,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.toArgb
 import app.cash.turbine.test
 import com.example.todoapp.domain.model.Task
+import com.example.todoapp.domain.model.TaskWriteResult
 import com.example.todoapp.domain.use_case.task.AddTaskUseCase
 import com.example.todoapp.presentation.features.task.create.viewmodel.CreateTaskUiState
 import com.example.todoapp.presentation.features.task.create.viewmodel.CreateTaskViewModel
@@ -143,6 +144,7 @@ class CreateTaskViewModelTest {
         val job = Job()
         coEvery { mockAddTaskUseCase(any()) } coAnswers {
             job.join()
+            TaskWriteResult.Synced
         }
 
         // Act
@@ -189,7 +191,7 @@ class CreateTaskViewModelTest {
 
         // Capturar la tarea que se pasa al caso de uso
         val taskSlot = slot<Task>()
-        coEvery { mockAddTaskUseCase(capture(taskSlot)) } just Runs // Mockea el caso de uso para que tenga éxito
+        coEvery { mockAddTaskUseCase(capture(taskSlot)) } returns TaskWriteResult.Synced
 
         // Act
         viewModel.saveTask()
@@ -268,7 +270,7 @@ class CreateTaskViewModelTest {
     fun `onSaveSuccessConsumed resetea saveSuccess`() = runTest {
         // Simular un guardado exitoso primero
         viewModel.onTitleChange("Test")
-        coEvery { mockAddTaskUseCase(any()) } just Runs
+        coEvery { mockAddTaskUseCase(any()) } returns TaskWriteResult.Synced
         viewModel.saveTask()
         // Esperar a que saveSuccess sea true (usando Turbine o simplemente confiando en el dispatcher)
         // Para ser más robusto, se podría usar viewModel.uiState.first { it.saveSuccess }

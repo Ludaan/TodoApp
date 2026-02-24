@@ -1,6 +1,7 @@
 package com.example.todoapp.domain.usecase.task
 
 import com.example.todoapp.domain.model.Task
+import com.example.todoapp.domain.model.TaskWriteResult
 import com.example.todoapp.domain.repository.TaskRepository
 import com.example.todoapp.domain.use_case.task.AddTaskUseCase
 import io.mockk.Runs
@@ -10,14 +11,13 @@ import io.mockk.impl.annotations.RelaxedMockK
 import io.mockk.junit4.MockKRule
 import io.mockk.just
 import kotlinx.coroutines.test.runTest
-import org.junit.Assert.assertEquals
-import org.junit.Assert.fail
+import org.junit.Assert.assertTrue
 import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
 import java.time.Instant
 import java.time.LocalTime
-import java.util.UUID // Para generar IDs únicos si es necesario
+import java.util.UUID
 
 class AddTaskUseCaseTest {
 
@@ -29,15 +29,14 @@ class AddTaskUseCaseTest {
 
     private lateinit var addTaskUseCase: AddTaskUseCase
 
-    // Tarea de ejemplo bien formada
     private val validNewTask = Task(
-        UUID.randomUUID().toString(), // Asumimos que el ID se genera antes de llamar al UseCase
+        UUID.randomUUID().toString(),
         title = "Nueva Tarea de Prueba",
         description = "Descripción de la nueva tarea",
         isCompleted = false,
-        createdAt = Instant.now(), // Asumimos que createdAt se establece antes
+        createdAt = Instant.now(),
         color = 0,
-        limitDate = Instant.now().plusSeconds(86400 * 2), // Dos días en el futuro
+        limitDate = Instant.now().plusSeconds(86400 * 2),
         type = 1,
         repeatAt = LocalTime.NOON,
         repeatDaily = false
@@ -49,60 +48,30 @@ class AddTaskUseCaseTest {
     }
 
     @Test
-    fun `invoke con tarea valida deberia llamar a addLocalTask y addRemoteTask en el repositorio`() = runTest {
-        // Arrange
+    fun `invoke con red disponible devuelve Synced`() = runTest {
         coEvery { mockRepository.addLocalTask(any()) } just Runs
         coEvery { mockRepository.addRemoteTask(any()) } just Runs
+        coEvery { mockRepository.ackSynced(any(), any()) } just Runs
 
-        // Act
-        addTaskUseCase(validNewTask)
+        val result = addTaskUseCase(validNewTask)
 
-        // Assert
-        coVerify(exactly = 1) { mockRepository.addLocalTask(validNewTask) }
-        coVerify(exactly = 1) { mockRepository.addRemoteTask(validNewTask) }
+        assertTrue(result is TaskWriteResult.Synced)
+        coVerify(exactly = 1) { mockRepository.addLocalTask(any()) }
+        coVerify(exactly = 1) { mockRepository.addRemoteTask(any()) }
+        coVerify(exactly = 1) { mockRepository.ackSynced(validNewTask.id, any()) }
     }
 
     @Test
-    fun `invoke cuando addLocalTask lanza excepcion deberia propagarla y no llamar a addRemoteTask`() = runTest {
-        // Arrange
-        val expectedException = RuntimeException("Error añadiendo localmente")
-        coEvery { mockRepository.addLocalTask(validNewTask) } throws expectedException
+    fun `invoke cuando falla remoto devuelve PendingSync y marca FAILED`() = runTest {
+        coEvery { mockRepository.addLocalTask(any()) } just Runs
+        coEvery { mockRepository.addRemoteTask(any()) } throws RuntimeException("Error red")
+        coEvery { mockRepository.markFailed(any(), any()) } just Runs
 
-        var actualException: Exception? = null
-        try {
-            // Act
-            addTaskUseCase(validNewTask)
-            fail("Se esperaba una excepción pero no fue lanzada")
-        } catch (e: Exception) {
-            actualException = e
-        }
+        val result = addTaskUseCase(validNewTask)
 
-        // Assert
-        assertEquals("La excepción lanzada no es la esperada", expectedException, actualException)
-        coVerify(exactly = 1) { mockRepository.addLocalTask(validNewTask) }
-        coVerify(exactly = 0) { mockRepository.addRemoteTask(any()) } // No debería llamarse
+        assertTrue(result is TaskWriteResult.PendingSync)
+        coVerify(exactly = 1) { mockRepository.addLocalTask(any()) }
+        coVerify(exactly = 1) { mockRepository.addRemoteTask(any()) }
+        coVerify(exactly = 1) { mockRepository.markFailed(validNewTask.id, any()) }
     }
-
-    @Test
-    fun `invoke cuando addRemoteTask lanza excepcion (despues de exito en local) deberia propagarla`() = runTest {
-        // Arrange
-        val expectedException = RuntimeException("Error añadiendo remotamente")
-        coEvery { mockRepository.addLocalTask(validNewTask) } just Runs // Local tiene éxito
-        coEvery { mockRepository.addRemoteTask(validNewTask) } throws expectedException // Remoto falla
-
-        var actualException: Exception? = null
-        try {
-            // Act
-            addTaskUseCase(validNewTask)
-            fail("Se esperaba una excepción pero no fue lanzada")
-        } catch (e: Exception) {
-            actualException = e
-        }
-
-        // Assert
-        assertEquals("La excepción lanzada no es la esperada", expectedException, actualException)
-        coVerify(exactly = 1) { mockRepository.addLocalTask(validNewTask) }
-        coVerify(exactly = 1) { mockRepository.addRemoteTask(validNewTask) }
-    }
-
 }
