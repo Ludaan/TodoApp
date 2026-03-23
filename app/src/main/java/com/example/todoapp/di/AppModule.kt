@@ -6,9 +6,11 @@ import com.example.todoapp.core.common.DispatchersProvider
 import com.example.todoapp.core.common.StandardDispatchers
 import com.example.todoapp.data.local.AppDatabase
 import com.example.todoapp.data.local.dao.TaskDao
+import com.example.todoapp.data.sync.TaskSyncGatewayImpl
 import com.example.todoapp.domain.logic.sync.ConflictResolver
 import com.example.todoapp.domain.logic.sync.SyncManager
 import com.example.todoapp.domain.repository.TaskRepository
+import com.example.todoapp.domain.repository.TaskSyncGateway
 import com.example.todoapp.data.repository.TaskRepositoryImpl
 import dagger.Binds
 import dagger.Module
@@ -29,8 +31,10 @@ abstract class AppModule {
     @Binds
     @Singleton
     abstract fun bindTaskRepository(repository: TaskRepositoryImpl): TaskRepository
-    // NOTA: TaskRepositoryImpl ahora obtendrá FirebaseTaskApi de FirebaseModule
-    // y TaskDao de AppProvidesModule a través de la inyección de Hilt.
+
+    @Binds
+    @Singleton
+    abstract fun bindTaskSyncGateway(gateway: TaskSyncGatewayImpl): TaskSyncGateway
 }
 
 // AppProvidesModule.kt (Objeto para @Provides)
@@ -56,8 +60,8 @@ object AppProvidesModule {
     @Provides
     @Singleton
     fun provideSyncManager(
-        repository: TaskRepository,
+        syncGateway: TaskSyncGateway,
         conflictResolver: ConflictResolver,
         dispatchers: DispatchersProvider
-    ): SyncManager = SyncManager(repository, conflictResolver, dispatchers.io)
+    ): SyncManager = SyncManager(syncGateway, conflictResolver, dispatchers.io)
 }

@@ -60,7 +60,7 @@ object TaskMapper {
         repeatAt = LocalTime.parse(entity.repeatAt, timeFormatter),
         description = entity.description,
         repeatDaily = entity.repeatDaily,
-        syncStatus = entity.syncStatus.toTaskSyncStatus()
+        syncStatus = entity.syncStatus
     )
 
     @RequiresApi(Build.VERSION_CODES.O)
@@ -76,9 +76,10 @@ object TaskMapper {
         repeatAt = task.repeatAt.format(timeFormatter),
         description = task.description,
         repeatDaily = task.repeatDaily,
-        syncStatus = task.syncStatus.name
+        syncStatus = task.syncStatus
     )
 
     private fun String.toTaskSyncStatus(): TaskSyncStatus =
-        TaskSyncStatus.entries.firstOrNull { it.name == this } ?: TaskSyncStatus.SYNCED
+        TaskSyncStatus.entries.firstOrNull { it.name == this }
+            ?: throw IllegalArgumentException("Unknown sync status: $this")
 }

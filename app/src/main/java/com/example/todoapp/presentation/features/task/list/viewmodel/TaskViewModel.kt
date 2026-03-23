@@ -5,6 +5,7 @@ import androidx.annotation.RequiresApi
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.todoapp.core.util.DataState
+import com.example.todoapp.domain.model.SyncResult
 import com.example.todoapp.domain.model.Task
 import com.example.todoapp.domain.model.TaskWriteResult
 import com.example.todoapp.domain.use_case.task.DeleteTaskUseCase
@@ -25,7 +26,7 @@ class TaskViewModel @Inject constructor(
 ) : ViewModel() {
 
     private val _userMessage = MutableStateFlow<String?>(null)
-    private val _syncState = MutableStateFlow<DataState<Unit>>(DataState.Idle)
+    private val _syncState = MutableStateFlow<DataState<SyncResult>>(DataState.Idle)
     private val _isLoadingTasks = MutableStateFlow(true)
 
     val uiState: StateFlow<TaskListUiState> = combine(
@@ -53,7 +54,7 @@ class TaskViewModel @Inject constructor(
         viewModelScope.launch {
             try {
                 when (deleteTaskUseCase(taskId)) {
-                    TaskWriteResult.Synced -> Unit
+                    is TaskWriteResult.Synced -> Unit
                     is TaskWriteResult.PendingSync -> {
                         _userMessage.value = "Eliminada localmente. Se sincronizará cuando haya conexión."
                     }
@@ -70,7 +71,7 @@ class TaskViewModel @Inject constructor(
         viewModelScope.launch {
             try {
                 when (updateTaskCompletionStatusUseCase(taskToToggle.id, newStatus)) {
-                    TaskWriteResult.Synced -> Unit
+                    is TaskWriteResult.Synced -> Unit
                     is TaskWriteResult.PendingSync -> {
                         _userMessage.value = "Cambio guardado localmente. Se sincronizará después."
                     }

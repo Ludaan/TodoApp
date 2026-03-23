@@ -3,6 +3,7 @@ package com.example.todoapp.data.local.entities
 import androidx.room.ColumnInfo
 import androidx.room.Entity
 import androidx.room.PrimaryKey
+import com.example.todoapp.domain.model.TaskSyncStatus
 import java.util.UUID
 
 @Entity(tableName = "tasks")
@@ -18,6 +19,6 @@ data class TaskEntity(
     val type: Int,
     @ColumnInfo(name = "repeat_at") val repeatAt: String,
     @ColumnInfo(name = "repeat_daily") val repeatDaily: Boolean,
-    @ColumnInfo(name = "sync_status") val syncStatus: String = "SYNCED"
+    @ColumnInfo(name = "sync_status") val syncStatus: TaskSyncStatus = TaskSyncStatus.SYNCED
 
 )

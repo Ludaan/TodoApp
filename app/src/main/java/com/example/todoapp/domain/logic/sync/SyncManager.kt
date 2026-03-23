@@ -3,8 +3,8 @@ package com.example.todoapp.domain.logic.sync
 import android.os.Build
 import androidx.annotation.RequiresApi
 import com.example.todoapp.core.util.DataState
-import com.example.todoapp.domain.model.TaskSyncStatus
-import com.example.todoapp.domain.repository.TaskRepository
+import com.example.todoapp.domain.model.SyncResult
+import com.example.todoapp.domain.repository.TaskSyncGateway
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flow
@@ -12,7 +12,7 @@ import kotlinx.coroutines.flow.flowOn
 import javax.inject.Inject
 
 class SyncManager @Inject constructor(
-    private val repository: TaskRepository,
+    private val syncGateway: TaskSyncGateway,
     private val conflictResolver: ConflictResolver,
     private val ioDispatcher: CoroutineDispatcher
 ) {
@@ -25,23 +25,20 @@ class SyncManager @Inject constructor(
      * 4. Marca estado SYNCED/FAILED según resultado.
      */
     @RequiresApi(Build.VERSION_CODES.O)
-    fun syncReactive(): Flow<DataState<Unit>> = flow {
+    fun syncReactive(): Flow<DataState<SyncResult>> = flow {
         emit(DataState.Loading)
 
         try {
-            repository.getRemoteTasks().collect { state ->
+            syncGateway.observeRemoteTasks().collect { state ->
                 when (state) {
                     is DataState.Loading -> emit(DataState.Loading)
 
                     is DataState.Success -> {
-                        val localTasks = repository.getLocalTasksSnapshot()
-                        val resolved = conflictResolver.resolve(localTasks, state.data)
-                        repository.updateLocalTasks(resolved)
-                        repository.updateRemoteTasks(resolved)
-                        syncPendingWrites()
-                        syncPendingDeletes()
-
-                        emit(DataState.Success(Unit))
+                        val localTasks = syncGateway.getLocalTasksSnapshot()
+                        val resolvedTasks = conflictResolver.resolve(localTasks, state.data)
+                        syncGateway.replaceLocalTasks(resolvedTasks)
+                        val result = syncGateway.syncResolvedTasks(resolvedTasks)
+                        emit(DataState.Success(result))
                     }
 
                     is DataState.Error -> emit(DataState.Error(state.message))
@@ -53,27 +50,4 @@ class SyncManager @Inject constructor(
             emit(DataState.Error(e.localizedMessage ?: "Error syncing tasks"))
         }
     }.flowOn(ioDispatcher)
-
-    @RequiresApi(Build.VERSION_CODES.O)
-    private suspend fun syncPendingWrites() {
-        repository.getPendingTasks().forEach { task ->
-            try {
-                repository.addRemoteTask(task.copy(syncStatus = TaskSyncStatus.SYNCED))
-                repository.ackSynced(task.id, System.currentTimeMillis())
-            } catch (_: Exception) {
-                repository.markFailed(task.id, System.currentTimeMillis())
-            }
-        }
-    }
-
-    private suspend fun syncPendingDeletes() {
-        repository.getPendingDeleteTaskIds().forEach { taskId ->
-            try {
-                repository.deleteRemoteTask(taskId)
-                repository.deleteLocalTaskHard(taskId)
-            } catch (_: Exception) {
-                repository.markDeleteFailed(taskId, System.currentTimeMillis())
-            }
-        }
-    }
 }
