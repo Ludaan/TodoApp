@@ -34,29 +34,21 @@ class DeleteTaskUseCaseTest {
 
     @Test
     fun `invoke con remoto exitoso devuelve Synced y borra local hard`() = runTest {
-        coEvery { mockRepository.markPendingDelete(any(), any()) } just runs
-        coEvery { mockRepository.deleteRemoteTask(any()) } just runs
-        coEvery { mockRepository.deleteLocalTaskHard(any()) } just runs
+        coEvery { mockRepository.deleteTask(any()) } returns TaskWriteResult.Synced()
 
         val result = deleteTaskUseCase(testTaskId)
 
         assertTrue(result is TaskWriteResult.Synced)
-        coVerify(exactly = 1) { mockRepository.markPendingDelete(testTaskId, any()) }
-        coVerify(exactly = 1) { mockRepository.deleteRemoteTask(testTaskId) }
-        coVerify(exactly = 1) { mockRepository.deleteLocalTaskHard(testTaskId) }
+        coVerify(exactly = 1) { mockRepository.deleteTask(testTaskId) }
     }
 
     @Test
     fun `invoke cuando falla remoto devuelve PendingSync y marca FAILED_DELETE`() = runTest {
-        coEvery { mockRepository.markPendingDelete(any(), any()) } just runs
-        coEvery { mockRepository.deleteRemoteTask(testTaskId) } throws RuntimeException("Error remoto")
-        coEvery { mockRepository.markDeleteFailed(any(), any()) } just runs
+        coEvery { mockRepository.deleteTask(testTaskId) } returns TaskWriteResult.PendingSync(message = "Error remoto")
 
         val result = deleteTaskUseCase(testTaskId)
 
         assertTrue(result is TaskWriteResult.PendingSync)
-        coVerify(exactly = 1) { mockRepository.markPendingDelete(testTaskId, any()) }
-        coVerify(exactly = 1) { mockRepository.deleteRemoteTask(testTaskId) }
-        coVerify(exactly = 1) { mockRepository.markDeleteFailed(testTaskId, any()) }
+        coVerify(exactly = 1) { mockRepository.deleteTask(testTaskId) }
     }
 }

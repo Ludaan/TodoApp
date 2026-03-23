@@ -2,6 +2,7 @@ package com.example.todoapp.data.mapper
 
 import com.example.todoapp.data.remote.model.RemoteTaskDto // Tu DTO remoto
 import com.example.todoapp.domain.model.Task // Tu modelo de dominio
+import com.example.todoapp.domain.model.TaskSyncStatus
 import com.google.firebase.Timestamp // Timestamp de Firebase
 import org.junit.Test
 import java.time.Instant
@@ -10,7 +11,6 @@ import org.junit.Assert.assertTrue
 import java.time.LocalTime
 import java.time.format.DateTimeFormatter
 import java.util.Date
-import com.example.todoapp.core.util.toInstant
 import com.example.todoapp.data.local.entities.TaskEntity
 
 class TaskMapperTest {
@@ -65,7 +65,7 @@ class TaskMapperTest {
         type = 0,
         repeatAt = testLocalTimeRepeat.format(timeFormatter), // "09:15"
         repeatDaily = true,
-        syncStatus = "SYNCED" // Campo adicional de la entidad
+        syncStatus = TaskSyncStatus.SYNCED
     )
 
 
@@ -147,7 +147,7 @@ class TaskMapperTest {
         // Si tuvieras una lógica en el mapper para syncStatus, la probarías.
         // Por ahora, solo verificamos que los otros campos se mapeen bien.
         // Si quieres ser explícito sobre el valor por defecto:
-        assertEquals("SYNCED", mappedEntity.syncStatus) // Asumiendo el valor por defecto de TaskEntity
+        assertEquals(TaskSyncStatus.SYNCED, mappedEntity.syncStatus)
     }
 
     // --- Pruebas para Casos Borde o Especiales (si aplican) ---

@@ -49,29 +49,21 @@ class AddTaskUseCaseTest {
 
     @Test
     fun `invoke con red disponible devuelve Synced`() = runTest {
-        coEvery { mockRepository.addLocalTask(any()) } just Runs
-        coEvery { mockRepository.addRemoteTask(any()) } just Runs
-        coEvery { mockRepository.ackSynced(any(), any()) } just Runs
+        coEvery { mockRepository.upsertTask(any()) } returns TaskWriteResult.Synced()
 
         val result = addTaskUseCase(validNewTask)
 
         assertTrue(result is TaskWriteResult.Synced)
-        coVerify(exactly = 1) { mockRepository.addLocalTask(any()) }
-        coVerify(exactly = 1) { mockRepository.addRemoteTask(any()) }
-        coVerify(exactly = 1) { mockRepository.ackSynced(validNewTask.id, any()) }
+        coVerify(exactly = 1) { mockRepository.upsertTask(validNewTask) }
     }
 
     @Test
     fun `invoke cuando falla remoto devuelve PendingSync y marca FAILED`() = runTest {
-        coEvery { mockRepository.addLocalTask(any()) } just Runs
-        coEvery { mockRepository.addRemoteTask(any()) } throws RuntimeException("Error red")
-        coEvery { mockRepository.markFailed(any(), any()) } just Runs
+        coEvery { mockRepository.upsertTask(any()) } returns TaskWriteResult.PendingSync(message = "Error red")
 
         val result = addTaskUseCase(validNewTask)
 
         assertTrue(result is TaskWriteResult.PendingSync)
-        coVerify(exactly = 1) { mockRepository.addLocalTask(any()) }
-        coVerify(exactly = 1) { mockRepository.addRemoteTask(any()) }
-        coVerify(exactly = 1) { mockRepository.markFailed(validNewTask.id, any()) }
+        coVerify(exactly = 1) { mockRepository.upsertTask(validNewTask) }
     }
 }

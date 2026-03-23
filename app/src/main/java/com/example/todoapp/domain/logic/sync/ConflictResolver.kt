@@ -22,16 +22,24 @@ class ConflictResolver {
             val localTask = localMap[id]
             val remoteTask = remoteMap[id]
 
-            merged[id] = when {
-                localTask == null -> remoteTask!!
-                remoteTask == null -> localTask
-                localTask.updatedAt > remoteTask.updatedAt -> localTask
-                remoteTask.updatedAt > localTask.updatedAt -> remoteTask
-                localTask.syncStatus == TaskSyncStatus.PENDING_DELETE -> localTask
-                else -> remoteTask
-            }
+            merged[id] = selectWinner(localTask, remoteTask)
         }
 
         return merged.values.toList()
+    }
+
+    private fun selectWinner(localTask: Task?, remoteTask: Task?): Task {
+        require(localTask != null || remoteTask != null) {
+            "At least one task version must be present to resolve conflicts"
+        }
+
+        return when {
+            localTask == null -> remoteTask!!
+            remoteTask == null -> localTask
+            localTask.syncStatus == TaskSyncStatus.PENDING_DELETE -> localTask
+            localTask.updatedAt > remoteTask.updatedAt -> localTask
+            remoteTask.updatedAt > localTask.updatedAt -> remoteTask
+            else -> remoteTask
+        }
     }
 }

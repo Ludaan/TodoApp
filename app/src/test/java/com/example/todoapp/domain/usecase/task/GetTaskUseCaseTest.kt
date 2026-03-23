@@ -67,8 +67,7 @@ class GetTaskUseCaseTest {
             )
         )
 
-        // Usamos 'every' porque getLocalTasks() no es suspend. Si lo fuera, usaríamos 'coEvery'.
-        every { mockRepository.getLocalTasks() } returns flowOf(fakeTasks)
+        every { mockRepository.observeTasks() } returns flowOf(fakeTasks)
 
         //Act
         val resultFlow = getTaskUseCase()
@@ -82,14 +81,14 @@ class GetTaskUseCaseTest {
         }
 
         // Verifica que la función del repositorio fue llamada exactamente una vez
-        verify(exactly = 1) { mockRepository.getLocalTasks() }
+        verify(exactly = 1) { mockRepository.observeTasks() }
     }
 
     @Test
     fun `invoke cuando repositorio no tiene tareas deberia retornar flow con lista vacia`() = runTest {
         // Arrange
         val emptyTasks = emptyList<Task>()
-        every { mockRepository.getLocalTasks() } returns flowOf(emptyTasks)
+        every { mockRepository.observeTasks() } returns flowOf(emptyTasks)
 
         // Act
         val resultFlow = getTaskUseCase()
@@ -101,14 +100,14 @@ class GetTaskUseCaseTest {
             awaitComplete()
         }
 
-        verify(exactly = 1) { mockRepository.getLocalTasks() }
+        verify(exactly = 1) { mockRepository.observeTasks() }
     }
 
     @Test
     fun `invoke cuando repositorio emite error deberia propagar el error`() = runTest {
         // Arrange
         val expectedException = RuntimeException("Database error")
-        every { mockRepository.getLocalTasks() } returns flow { throw expectedException }
+        every { mockRepository.observeTasks() } returns flow { throw expectedException }
 
         // Act
         val resultFlow = getTaskUseCase()
@@ -121,7 +120,7 @@ class GetTaskUseCaseTest {
             // No se espera awaitComplete() aquí porque el Flow terminó con un error.
         }
 
-        verify(exactly = 1) { mockRepository.getLocalTasks() }
+        verify(exactly = 1) { mockRepository.observeTasks() }
     }
 
 

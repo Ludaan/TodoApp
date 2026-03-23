@@ -6,6 +6,7 @@ import androidx.room.OnConflictStrategy
 import androidx.room.Query
 import androidx.room.Transaction
 import com.example.todoapp.data.local.entities.TaskEntity
+import com.example.todoapp.domain.model.TaskSyncStatus
 import kotlinx.coroutines.flow.Flow
 
 @Dao
@@ -24,29 +25,38 @@ interface TaskDao {
         taskId: String,
         isCompleted: Boolean,
         updatedAt: Long,
-        syncStatus: String
+        syncStatus: TaskSyncStatus
     )
 
-    @Query("SELECT * FROM tasks WHERE sync_status NOT IN ('PENDING_DELETE', 'FAILED_DELETE') ORDER BY created_at DESC")
-    fun getAllTasksFlow(): Flow<List<TaskEntity>>
+    @Query("SELECT * FROM tasks ORDER BY created_at DESC")
+    suspend fun getAllTasks(): List<TaskEntity>
 
-    @Query("SELECT * FROM tasks WHERE is_completed = :isCompleted AND sync_status NOT IN ('PENDING_DELETE', 'FAILED_DELETE')")
-    fun getTasksByCompletion(isCompleted: Boolean): Flow<List<TaskEntity>>
+    @Query("SELECT * FROM tasks WHERE sync_status NOT IN (:excludedStatuses) ORDER BY created_at DESC")
+    fun getAllTasksFlow(excludedStatuses: List<TaskSyncStatus>): Flow<List<TaskEntity>>
 
-    @Query("SELECT * FROM tasks WHERE LOWER(title) LIKE '%' || LOWER(:query) || '%' AND sync_status NOT IN ('PENDING_DELETE', 'FAILED_DELETE')")
-    fun searchTasks(query: String): Flow<List<TaskEntity>>
+    @Query("SELECT * FROM tasks WHERE is_completed = :isCompleted AND sync_status NOT IN (:excludedStatuses)")
+    fun getTasksByCompletion(
+        isCompleted: Boolean,
+        excludedStatuses: List<TaskSyncStatus>
+    ): Flow<List<TaskEntity>>
 
-    @Query("SELECT * FROM tasks WHERE sync_status = 'CONFLICT'")
-    fun getConflictedTasks(): Flow<List<TaskEntity>>
+    @Query("SELECT * FROM tasks WHERE LOWER(title) LIKE '%' || LOWER(:query) || '%' AND sync_status NOT IN (:excludedStatuses)")
+    fun searchTasks(
+        query: String,
+        excludedStatuses: List<TaskSyncStatus>
+    ): Flow<List<TaskEntity>>
+
+    @Query("SELECT * FROM tasks WHERE sync_status = :status")
+    fun getTasksBySyncStatus(status: TaskSyncStatus): Flow<List<TaskEntity>>
 
     @Query("SELECT * FROM tasks WHERE id = :id LIMIT 1")
     suspend fun getTaskById(id: String): TaskEntity?
 
     @Query("SELECT * FROM tasks WHERE sync_status IN (:statuses)")
-    suspend fun getTasksBySyncStatuses(statuses: List<String>): List<TaskEntity>
+    suspend fun getTasksBySyncStatuses(statuses: List<TaskSyncStatus>): List<TaskEntity>
 
     @Query("UPDATE tasks SET sync_status = :syncStatus, updated_at = :updatedAt WHERE id = :taskId")
-    suspend fun updateTaskSyncStatus(taskId: String, syncStatus: String, updatedAt: Long)
+    suspend fun updateTaskSyncStatus(taskId: String, syncStatus: TaskSyncStatus, updatedAt: Long)
 
     @Query("DELETE FROM tasks WHERE id = :id")
     suspend fun deleteTaskById(id: String)
@@ -61,11 +71,16 @@ interface TaskDao {
                 taskId = task.id,
                 isCompleted = true,
                 updatedAt = System.currentTimeMillis(),
-                syncStatus = "PENDING"
+                syncStatus = TaskSyncStatus.PENDING
             )
         }
     }
 
-    @Query("SELECT * FROM tasks WHERE is_completed = 0 AND sync_status NOT IN ('PENDING_DELETE', 'FAILED_DELETE')")
-    suspend fun getIncompleteTasks(): List<TaskEntity>
+    @Query("SELECT * FROM tasks WHERE is_completed = 0 AND sync_status NOT IN (:excludedStatuses)")
+    suspend fun getIncompleteTasks(
+        excludedStatuses: List<TaskSyncStatus> = listOf(
+            TaskSyncStatus.PENDING_DELETE,
+            TaskSyncStatus.FAILED_DELETE
+        )
+    ): List<TaskEntity>
 }

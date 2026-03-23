@@ -14,6 +14,7 @@ import org.junit.Test
 import app.cash.turbine.test // Para probar Flows
 import com.example.todoapp.core.util.DataState
 import com.example.todoapp.domain.logic.sync.SyncManager
+import com.example.todoapp.domain.model.SyncResult
 import com.example.todoapp.domain.use_case.sync.SyncTasksUseCase
 import org.junit.Assert
 
@@ -34,10 +35,10 @@ class SyncTasksUseCaseTest {
     @Test
     fun `invoke deberia llamar a syncManager syncReactive y devolver su flow`() = runTest {
         // Arrange
-        // Preparamos un Flow<DataState<Unit>> de ejemplo que esperamos que syncReactive() devuelva
-        val expectedFlow: Flow<DataState<Unit>> = flowOf(
+        val syncResult = SyncResult(1, 0, 0, 0)
+        val expectedFlow: Flow<DataState<SyncResult>> = flowOf(
             DataState.Loading,
-            DataState.Success(Unit) // Unit porque T en DataState<T> es Unit
+            DataState.Success(syncResult)
         )
 
         // Cuando syncManager.syncReactive() sea llamado, devuelve nuestro expectedFlow
@@ -53,7 +54,7 @@ class SyncTasksUseCaseTest {
         // 2. Opcional pero recomendado: Verifica el contenido del Flow usando Turbine
         actualFlow.test {
             assertEquals(DataState.Loading, awaitItem())
-            assertEquals(DataState.Success(Unit), awaitItem())
+            assertEquals(DataState.Success(syncResult), awaitItem())
             awaitComplete()
         }
 
@@ -65,7 +66,7 @@ class SyncTasksUseCaseTest {
     fun `invoke cuando syncManager syncReactive emite error deberia propagar el flow con error`() = runTest {
         // Arrange
         val errorMessage = "Error durante la sincronización"
-        val errorFlow: Flow<DataState<Unit>> = flowOf(
+        val errorFlow: Flow<DataState<SyncResult>> = flowOf(
             DataState.Loading,
             DataState.Error(errorMessage)
         )

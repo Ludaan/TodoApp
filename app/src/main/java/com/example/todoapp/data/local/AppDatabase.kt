@@ -3,8 +3,10 @@ package com.example.todoapp.data.local
 import androidx.room.migration.Migration
 import androidx.room.Database
 import androidx.room.RoomDatabase
+import androidx.room.TypeConverters
 import androidx.sqlite.db.SupportSQLiteDatabase
 import com.example.todoapp.data.local.dao.TaskDao
+import com.example.todoapp.data.local.converter.TaskSyncStatusConverter
 import com.example.todoapp.data.local.entities.TaskEntity
 
 @Database(
@@ -12,6 +14,7 @@ import com.example.todoapp.data.local.entities.TaskEntity
     version = 2,
     exportSchema = false
 )
+@TypeConverters(TaskSyncStatusConverter::class)
 abstract class AppDatabase : RoomDatabase() {
     abstract fun taskDao(): TaskDao
 

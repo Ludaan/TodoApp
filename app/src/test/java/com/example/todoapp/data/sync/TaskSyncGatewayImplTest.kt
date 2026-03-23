@@ -1,13 +1,13 @@
-package com.example.todoapp.data.repository
+package com.example.todoapp.data.sync
 
 import app.cash.turbine.test
+import com.example.todoapp.core.util.DataState
 import com.example.todoapp.data.local.dao.TaskDao
 import com.example.todoapp.data.local.entities.TaskEntity
 import com.example.todoapp.data.mapper.TaskMapper
 import com.example.todoapp.data.remote.model.RemoteTaskDto
 import com.example.todoapp.domain.model.Task
 import com.example.todoapp.domain.model.TaskSyncStatus
-import com.example.todoapp.domain.model.TaskWriteResult
 import com.example.todoapp.domain.repository.FirebaseTaskApi
 import com.google.firebase.Timestamp
 import io.mockk.MockKAnnotations
@@ -27,7 +27,7 @@ import org.junit.Test
 import java.time.Instant
 import java.time.LocalTime
 
-class TaskRepositoryImplTest {
+class TaskSyncGatewayImplTest {
 
     @MockK
     private lateinit var mockTaskDao: TaskDao
@@ -35,10 +35,10 @@ class TaskRepositoryImplTest {
     @MockK
     private lateinit var mockFirebaseApi: FirebaseTaskApi
 
-    private lateinit var repository: TaskRepositoryImpl
+    private lateinit var gateway: TaskSyncGatewayImpl
 
     private val createdAt = Instant.parse("2025-01-01T10:00:00Z")
-    private val domainTask = Task(
+    private val task = Task(
         id = "task-1",
         title = "Task 1",
         description = "desc",
@@ -52,7 +52,7 @@ class TaskRepositoryImplTest {
         repeatDaily = false,
         syncStatus = TaskSyncStatus.SYNCED
     )
-    private val taskEntity = TaskEntity(
+    private val entity = TaskEntity(
         id = "task-1",
         title = "Task 1",
         description = "desc",
@@ -71,10 +71,10 @@ class TaskRepositoryImplTest {
         title = "Task 1",
         description = "desc",
         isCompleted = false,
-        createdAt = Timestamp(taskEntity.createdAt / 1_000, 0),
-        updatedAt = Timestamp(taskEntity.updatedAt / 1_000, 0),
+        createdAt = Timestamp(entity.createdAt / 1_000, 0),
+        updatedAt = Timestamp(entity.updatedAt / 1_000, 0),
         color = 0,
-        limitDate = Timestamp(taskEntity.limitDate / 1_000, 0),
+        limitDate = Timestamp(entity.limitDate / 1_000, 0),
         type = 1,
         repeatAt = "12:00",
         repeatDaily = false,
@@ -84,13 +84,14 @@ class TaskRepositoryImplTest {
     @Before
     fun setUp() {
         MockKAnnotations.init(this)
-        repository = TaskRepositoryImpl(mockTaskDao, mockFirebaseApi)
+        gateway = TaskSyncGatewayImpl(mockTaskDao, mockFirebaseApi)
         mockkObject(TaskMapper)
-        every { TaskMapper.fromLocal(taskEntity) } returns domainTask
-        every { TaskMapper.toLocal(any()) } answers { taskEntity.copy(syncStatus = firstArg<Task>().syncStatus) }
+        every { TaskMapper.fromRemote(remoteDto) } returns task
+        every { TaskMapper.fromLocal(entity) } returns task
+        every { TaskMapper.toLocal(any()) } answers { entity.copy(syncStatus = firstArg<Task>().syncStatus) }
         every { TaskMapper.toRemote(any()) } answers {
-            val task = firstArg<Task>()
-            remoteDto.copy(syncStatus = task.syncStatus.name)
+            val mappedTask = firstArg<Task>()
+            remoteDto.copy(syncStatus = mappedTask.syncStatus.name)
         }
     }
 
@@ -100,50 +101,35 @@ class TaskRepositoryImplTest {
     }
 
     @Test
-    fun `observeTasks maps local entities to domain tasks`() = runTest {
-        every { mockTaskDao.getAllTasksFlow(any()) } returns flowOf(listOf(taskEntity))
+    fun `observeRemoteTasks maps remote tasks to domain`() = runTest {
+        every { mockFirebaseApi.getTasks() } returns flowOf(DataState.Success(listOf(remoteDto)))
 
-        repository.observeTasks().test {
-            assertEquals(listOf(domainTask), awaitItem())
+        gateway.observeRemoteTasks().test {
+            val item = awaitItem()
+            assertTrue(item is DataState.Success)
+            assertEquals(listOf(task), (item as DataState.Success).data)
             awaitComplete()
         }
-
-        coVerify(exactly = 0) { mockTaskDao.getAllTasks() }
     }
 
     @Test
-    fun `upsertTask persists local pending state and marks sync success`() = runTest {
-        coEvery { mockTaskDao.insertTask(any()) } returns 1L
+    fun `syncResolvedTasks syncs active tasks and pending deletes`() = runTest {
+        val pendingDeleteEntity = entity.copy(id = "delete-1", syncStatus = TaskSyncStatus.PENDING_DELETE)
+        val pendingDeleteTask = task.copy(id = "delete-1", syncStatus = TaskSyncStatus.PENDING_DELETE)
+
         coEvery { mockFirebaseApi.addOrUpdateTask(any()) } returns Unit
         coEvery { mockTaskDao.updateTaskSyncStatus("task-1", TaskSyncStatus.SYNCED, any()) } returns Unit
+        coEvery { mockTaskDao.getTasksBySyncStatuses(any()) } returns listOf(pendingDeleteEntity)
+        coEvery { mockFirebaseApi.deleteTask("delete-1") } returns Unit
+        coEvery { mockTaskDao.deleteTaskById("delete-1") } returns Unit
 
-        val result = repository.upsertTask(domainTask)
+        val result = gateway.syncResolvedTasks(listOf(task, pendingDeleteTask))
 
-        assertTrue(result is TaskWriteResult.Synced)
-        coVerify(exactly = 1) {
-            mockTaskDao.insertTask(match { it.syncStatus == TaskSyncStatus.PENDING })
-        }
-        coVerify(exactly = 1) {
-            mockFirebaseApi.addOrUpdateTask(match { it.syncStatus == TaskSyncStatus.SYNCED.name })
-        }
-        coVerify(exactly = 1) {
-            mockTaskDao.updateTaskSyncStatus("task-1", TaskSyncStatus.SYNCED, any())
-        }
-    }
-
-    @Test
-    fun `deleteTask marks pending delete and hard deletes on remote success`() = runTest {
-        coEvery { mockTaskDao.updateTaskSyncStatus("task-1", TaskSyncStatus.PENDING_DELETE, any()) } returns Unit
-        coEvery { mockFirebaseApi.deleteTask("task-1") } returns Unit
-        coEvery { mockTaskDao.deleteTaskById("task-1") } returns Unit
-
-        val result = repository.deleteTask("task-1")
-
-        assertTrue(result is TaskWriteResult.Synced)
-        coVerify(exactly = 1) {
-            mockTaskDao.updateTaskSyncStatus("task-1", TaskSyncStatus.PENDING_DELETE, any())
-        }
-        coVerify(exactly = 1) { mockFirebaseApi.deleteTask("task-1") }
-        coVerify(exactly = 1) { mockTaskDao.deleteTaskById("task-1") }
+        assertEquals(1, result.syncedCount)
+        assertEquals(1, result.deletedCount)
+        assertEquals(0, result.failedCount)
+        assertEquals(0, result.deleteFailedCount)
+        coVerify(exactly = 1) { mockFirebaseApi.addOrUpdateTask(match { it.id == "task-1" }) }
+        coVerify(exactly = 1) { mockFirebaseApi.deleteTask("delete-1") }
     }
 }

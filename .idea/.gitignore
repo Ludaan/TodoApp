@@ -6,3 +6,4 @@
 *.iml
 /inspectionProfiles/Project_Default.xml
 /.name
+/compiler.xml

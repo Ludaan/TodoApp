@@ -144,7 +144,7 @@ class CreateTaskViewModelTest {
         val job = Job()
         coEvery { mockAddTaskUseCase(any()) } coAnswers {
             job.join()
-            TaskWriteResult.Synced
+            TaskWriteResult.Synced()
         }
 
         // Act
@@ -191,7 +191,7 @@ class CreateTaskViewModelTest {
 
         // Capturar la tarea que se pasa al caso de uso
         val taskSlot = slot<Task>()
-        coEvery { mockAddTaskUseCase(capture(taskSlot)) } returns TaskWriteResult.Synced
+        coEvery { mockAddTaskUseCase(capture(taskSlot)) } returns TaskWriteResult.Synced()
 
         // Act
         viewModel.saveTask()
@@ -270,7 +270,7 @@ class CreateTaskViewModelTest {
     fun `onSaveSuccessConsumed resetea saveSuccess`() = runTest {
         // Simular un guardado exitoso primero
         viewModel.onTitleChange("Test")
-        coEvery { mockAddTaskUseCase(any()) } returns TaskWriteResult.Synced
+        coEvery { mockAddTaskUseCase(any()) } returns TaskWriteResult.Synced()
         viewModel.saveTask()
         // Esperar a que saveSuccess sea true (usando Turbine o simplemente confiando en el dispatcher)
         // Para ser más robusto, se podría usar viewModel.uiState.first { it.saveSuccess }

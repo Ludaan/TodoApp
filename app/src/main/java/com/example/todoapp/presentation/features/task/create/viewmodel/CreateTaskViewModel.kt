@@ -129,7 +129,7 @@ class CreateTaskViewModel @Inject constructor(
         viewModelScope.launch {
             try {
                 when (addTaskUseCase(taskToSave)) {
-                    TaskWriteResult.Synced -> {
+                    is TaskWriteResult.Synced -> {
                         _uiState.update { it.copy(isSaving = false, saveSuccess = true) }
                     }
                     is TaskWriteResult.PendingSync -> {
